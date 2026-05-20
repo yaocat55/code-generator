@@ -1,0 +1,6 @@
+gen:
+  author: yourname
+  packageName: com.example
+  autoRemovePre: true
+  tablePrefix: ""
+  ignoreCustomTemplate: true

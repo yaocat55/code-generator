@@ -1,0 +1,158 @@
+package ${package}.service;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ${package}.mapper.${className}Mapper;
+import ${package}.entity.${className}ConditionEntity;
+import ${package}.entity.${className}Entity;
+import ${package}.entity.ResponsePageEntity;
+#if($isMasterSlave)
+#foreach($slaveTable in $slaveTables)
+import ${package}.mapper.${slaveTable.className}Mapper;
+import ${package}.entity.${slaveTable.className}Entity;
+import ${package}.entity.${slaveTable.className}ConditionEntity;
+#end
+#end
+import ${package}.util.AssertUtil;
+import ${package}.util.FillUserUtil;
+import ${package}.mapper.BaseMapper;
+/**
+ * ${tableComment} 服务层
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Service
+public class ${className}Service extends BaseService< ${className}Entity,  ${className}ConditionEntity> {
+
+	@Autowired
+	private ${className}Mapper ${classname}Mapper;
+#if($isMasterSlave)
+#foreach($slaveTable in $slaveTables)
+	@Autowired
+	private ${slaveTable.className}Mapper ${slaveTable.classname}Mapper;
+#end
+#end
+
+	/**
+     * 查询${tableComment}信息
+     *
+     * @param ${primaryKey.attrname} ${tableComment}ID
+     * @return ${tableComment}信息
+     */
+	public ${className}Entity findById(${primaryKey.attrType} ${primaryKey.attrname}) {
+	    ${className}Entity ${classname}Entity = ${classname}Mapper.findById(${primaryKey.attrname});
+#if($isMasterSlave)
+		if (${classname}Entity != null) {
+#foreach($slaveTable in $slaveTables)
+			// 查询${slaveTable.tableComment}列表
+			${slaveTable.className}ConditionEntity ${slaveTable.classname}Condition = new ${slaveTable.className}ConditionEntity();
+			${slaveTable.classname}Condition.set${ForeignKeyProp}(${primaryKey.attrname});
+			List<${slaveTable.className}Entity> ${slaveTable.classname}List = ${slaveTable.classname}Mapper.searchByCondition(${slaveTable.classname}Condition);
+			${classname}Entity.set${slaveTable.className}List(${slaveTable.classname}List);
+#end
+		}
+#end
+		return ${classname}Entity;
+	}
+
+	/**
+     * 根据条件分页查询${tableComment}列表
+     *
+     * @param ${classname}ConditionEntity ${tableComment}信息
+     * @return ${tableComment}集合
+     */
+	public ResponsePageEntity<${className}Entity> searchByPage(${className}ConditionEntity ${classname}ConditionEntity) {
+		int count = ${classname}Mapper.searchCount(${classname}ConditionEntity);
+		if (count == 0) {
+			return ResponsePageEntity.buildEmpty(${classname}ConditionEntity);
+		}
+		List<${className}Entity> dataList = ${classname}Mapper.searchByCondition(${classname}ConditionEntity);
+		return ResponsePageEntity.build(${classname}ConditionEntity, count, dataList);
+	}
+
+    /**
+     * 新增${tableComment}
+     *
+     * @param ${classname}Entity ${tableComment}信息
+     * @return 结果
+     */
+	@Transactional(rollbackFor = Exception.class)
+	public int insert(${className}Entity ${classname}Entity) {
+	    int rows = ${classname}Mapper.insert(${classname}Entity);
+#if($isMasterSlave)
+#foreach($slaveTable in $slaveTables)
+		insert${slaveTable.className}(${classname}Entity);
+#end
+#end
+		return rows;
+	}
+
+	/**
+     * 修改${tableComment}
+     *
+     * @param ${classname}Entity ${tableComment}信息
+     * @return 结果
+     */
+	@Transactional(rollbackFor = Exception.class)
+	public int update(${className}Entity ${classname}Entity) {
+	    int rows = ${classname}Mapper.update(${classname}Entity);
+#if($isMasterSlave)
+#foreach($slaveTable in $slaveTables)
+		// 删除原有的${slaveTable.tableComment}数据
+		${slaveTable.className}ConditionEntity ${slaveTable.classname}Condition = new ${slaveTable.className}ConditionEntity();
+		${slaveTable.classname}Condition.set${ForeignKeyProp}(${classname}Entity.getId());
+		List<${slaveTable.className}Entity> ${slaveTable.classname}List = ${slaveTable.classname}Mapper.searchByCondition(${slaveTable.classname}Condition);
+		if (${slaveTable.classname}List != null && !${slaveTable.classname}List.isEmpty()) {
+			List<Long> ids = ${slaveTable.classname}List.stream().map(${slaveTable.className}Entity::getId).collect(java.util.stream.Collectors.toList());
+			${slaveTable.classname}Mapper.deleteByIds(ids, new ${slaveTable.className}Entity());
+		}
+		insert${slaveTable.className}(${classname}Entity);
+#end
+#end
+		return rows;
+	}
+
+	/**
+     * 批量删除${tableComment}对象
+     *
+     * @param ids 系统ID集合
+     * @return 结果
+     */
+	public int deleteByIds(List<Long> ids) {
+		List<${className}Entity> entities = ${classname}Mapper.findByIds(ids);
+		AssertUtil.notEmpty(entities, "${tableComment}已被删除");
+
+		${className}Entity entity = new ${className}Entity();
+		FillUserUtil.fillUpdateUserInfo(entity);
+		return ${classname}Mapper.deleteByIds(ids, entity);
+	}
+
+	@Override
+	protected BaseMapper getBaseMapper() {
+		return ${classname}Mapper;
+	}
+
+#if($isMasterSlave)
+#foreach($slaveTable in $slaveTables)
+    /**
+     * 新增${slaveTable.tableComment}信息
+     *
+     * @param ${classname}Entity ${tableComment}对象
+     */
+    public void insert${slaveTable.className}(${className}Entity ${classname}Entity) {
+        List<${slaveTable.className}Entity> ${slaveTable.classname}List = ${classname}Entity.get${slaveTable.className}List();
+        ${primaryKey.attrType} ${primaryKey.attrname} = ${classname}Entity.getId();
+        if (${slaveTable.classname}List != null && !${slaveTable.classname}List.isEmpty()) {
+            for (${slaveTable.className}Entity ${slaveTable.classname} : ${slaveTable.classname}List) {
+                ${slaveTable.classname}.set${ForeignKeyProp}(${primaryKey.attrname});
+                FillUserUtil.fillInsertUserInfo(${slaveTable.classname});
+                ${slaveTable.classname}Mapper.insert(${slaveTable.classname});
+            }
+        }
+    }
+#end
+#end
+}

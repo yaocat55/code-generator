@@ -1,0 +1,26 @@
+# Compiled files
+target/
+build/
+*.class
+
+# IDE files
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+.vscode/
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+# Maven / Gradle
+.mvn/
+.m2/
+.gradle/

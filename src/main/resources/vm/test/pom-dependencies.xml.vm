@@ -1,0 +1,20 @@
+<!--
+    单元测试所需的Maven依赖配置
+    请将以下依赖添加到项目的pom.xml文件的<dependencies>节点中
+-->
+
+<!-- JUnit 4 测试框架（必需） -->
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Spring Boot Test 测试支持（推荐，已包含JUnit、Mockito、AssertJ等） -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <version>2.7.0</version>
+    <scope>test</scope>
+</dependency>

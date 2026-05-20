@@ -1,0 +1,38 @@
+package ${package}.entity;
+
+import lombok.Data;
+import ${package}.entity.RequestPageEntity;
+#foreach ($column in $columns)
+#if($column.attrType == 'Date')
+import java.util.Date;
+#break
+#end
+#end
+#foreach ($column in $columns)
+#if($column.attrType == 'BigDecimal')
+import java.math.BigDecimal;
+#break
+#end
+#end
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+/**
+ * ${tableComment}查询条件实体
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@ApiModel("${tableComment}查询条件实体")
+@Data
+public class ${className}ConditionEntity extends RequestPageEntity {
+
+#foreach ($column in $columns)
+
+	/**
+	 *  $column.columnComment
+     */
+	@ApiModelProperty("$column.columnComment")
+	private $column.attrType $column.attrname;
+#end
+}

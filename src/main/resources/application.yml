@@ -1,0 +1,14 @@
+server:
+  port: 7000
+
+spring:
+  application:
+    name: code-generator
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+logging:
+  level:
+    cn.net.susan: DEBUG
