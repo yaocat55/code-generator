@@ -1,4 +1,4 @@
-package cn.net.susan.generate.controller;
+package cn.net.yao.generate.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

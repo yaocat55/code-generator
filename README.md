@@ -76,15 +76,16 @@ CREATE TABLE `user` (
 
 支持的代码类型：
 
-| 类型 | 生成文件 |
-|------|----------|
-| Entity | `XxxEntity.java` + `XxxConditionEntity.java` |
-| Mapper | `XxxMapper.java` |
-| XML | `XxxMapper.xml` |
-| Service | `XxxService.java` |
-| Controller | `XxxController.java` |
-| Vue | `api.js` + `index.vue` |
-| Test | `XxxMapperTest.java` + `XxxServiceTest.java` + `XxxControllerTest.java` |
+| 类型 | 生成文件 | 适配脚手架 |
+|------|----------|------------|
+| Entity | `XxxEntity.java` + `XxxConditionEntity.java` | — |
+| Mapper | `XxxMapper.java` | — |
+| XML | `XxxMapper.xml` | — |
+| Service | `XxxService.java` | — |
+| Controller | `XxxController.java` | — |
+| Vue | `api.js` + `index.vue` | [vue-element-admin](https://github.com/PanJiaChen/vue-element-admin) |
+| React | `api.ts` + `index.tsx` | [Ant Design Pro](https://github.com/ant-design/ant-design-pro) |
+| Test | `XxxMapperTest.java` + `XxxServiceTest.java` + `XxxControllerTest.java` | — |
 
 ### 生成并下载
 
@@ -209,8 +210,122 @@ code-generator/
 │       ├── vue/
 │       │   ├── api.js.vm
 │       │   └── index.vue.vm
+│       ├── react/
+│       │   ├── api.ts.vm
+│       │   └── index.tsx.vm
 │       └── xml/Mapper.xml.vm
 ```
+
+---
+
+## 设计思路
+
+### 整体架构
+
+```
+ ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+ │ SQL 输入  │ →  │  SqlParser   │ →  │  Velocity    │ →  │  ZIP 输出    │
+ │ (文件/粘贴)│    │  解析为 Table │    │  模板渲染     │    │  (完整项目)  │
+ └──────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+```
+
+整个代码生成器由四个核心环节组成，以 **流水线** 的方式串联。
+
+### 1. SQL 解析 → TableInfo
+
+`SqlParser` 用正则表达式解析 `CREATE TABLE` 语句，提取：
+
+- **表名** — 通过 `GenUtils.tableToJava()` 转为 UpperCamelCase 的 `className`
+- **表注释** — 去掉"表/信息/管理"等冗余词，作为页面标题
+- **字段列表** — 每个字段拆出：列名、数据类型、注释、是否自增
+
+解析后对每个字段调用 `GenUtils.transColums()` 做二次加工：
+
+| 加工步骤 | 示例 |
+|----------|------|
+| 列名转 camelCase | `create_time` → `createTime` / `CreateTime` |
+| SQL 类型映射 Java 类型 | `varchar` → `String`，`bigint` → `Long` |
+| 标记主键 | 自增字段自动设为主键 |
+
+最终得到 `TableInfo`（含 `className`、`primaryKey`、`ColumnInfo[]`），作为后续模板渲染的**唯一数据来源**。
+
+### 2. Velocity 上下文构建
+
+`GenUtils.getVelocityContext()` 将 `TableInfo` 展开为模板变量：
+
+| 变量 | 含义 | 示例 |
+|------|------|------|
+| `${className}` | 大驼峰类名 | `User` |
+| `${classname}` | 小驼峰类名 | `user` |
+| `${tableName}` | 原始表名 | `user` |
+| `${tableComment}` | 表注释 | `用户` |
+| `${primaryKey}` | 主键字段名 | `id` |
+| `${columns}` | 字段列表 | 可迭代 `#foreach` |
+| `${package}` | 包名 | `com.example` |
+| `${moduleName}` | 模块名（包名最后一段） | `example` |
+| `${author}` | 作者 | `sue` |
+| `${datetime}` | 生成时间 | `2025-01-01 12:00:00` |
+
+模板通过 Velocity 的 `#foreach`、`#if` 等指令遍历列、过滤审计字段，生成最终代码。
+
+### 3. 模板组织与分发
+
+模板按**输出目标**分目录存放：
+
+```
+vm/
+├── java/       → Java 代码（Entity, Mapper, Service, Controller, Tests）
+├── xml/        → MyBatis XML 映射文件
+├── vue/        → Vue 2 + Element UI（vue-element-admin 脚手架）
+└── react/      → React + TypeScript + Ant Design Pro（ProTable / ModalForm）
+```
+
+每套模板是一个**独立、可替换的产出单元**。勾选不同 Code Type，后端通过 `filterTemplatesByCodeTypes()` 筛选对应的 `.vm` 模板进行渲染，不勾选的模板完全不参与渲染。
+
+Code Type → 模板映射关系：
+
+```
+entity      → Entity.java.vm, ConditionEntity.java.vm
+mapper      → Mapper.java.vm
+xml         → Mapper.xml.vm
+service     → Service.java.vm
+controller  → Controller.java.vm
+vue         → api.js.vm, index.vue.vm
+react       → api.ts.vm, index.tsx.vm
+test        → MapperTest.java.vm, ServiceTest.java.vm, ControllerTest.java.vm
+```
+
+### 4. 文件命名与 ZIP 打包
+
+`GenUtils.getFileName()` 根据模板名称推导输出路径。关键逻辑：
+
+- **Java 类名** — 从模板内容正则提取 `class ${className}XXX` 中的后缀（如 `Entity`、`Mapper`），拼出完整文件名
+- **包路径** — 从模板内容正则提取 `package ${package}.xxx` 中的子包名，拼出目录结构
+- **前端文件** — 直接用固定规则：`api.js` → `templates/{classname}/api.js`
+
+所有文件写入 `ZipOutputStream`，在内存中构建 ZIP，直接输出为 HTTP 响应流——不落盘。
+
+### 5. 自定义模板覆盖机制
+
+用户通过 UI 编辑模板后，内容保存到 `~/.code-generator/templates/` 目录。渲染时优先使用该目录下的同名文件：
+
+```
+classpath:vm/java/Entity.java.vm  (默认)
+          ↓ 用户保存后
+~/.code-generator/templates/Entity.java.vm  (优先)
+```
+
+由 `GenConfig.ignoreCustomTemplate` 控制开关，默认关闭（忽略自定义）。还原时会将自定义模板打包为 ZIP 下载后删除。
+
+### 6. 前端框架扩展方式
+
+要新增一个前端框架（如本次的 React），只需三步：
+
+1. **新增模板** — 在 `vm/{framework}/` 下放置 `.vm` 模板文件
+2. **注册模板** — 在 `GenUtils.getTemplates()` 添加路径，在 `getFileName()` 添加命名规则
+3. **注册 Code Type** — 在 `GenServiceImpl.filterTemplatesByCodeTypes()` 添加映射，在 `index.html` 添加复选框
+
+整个过程不涉及任何 SQL 解析、类型映射、ZIP 打包的改动，因为这些环节是**框架无关**的。模板只消费 `VelocityContext` 里的变量，前端框架之间的差异完全隔离在模板文件内部。
 
 ---
 

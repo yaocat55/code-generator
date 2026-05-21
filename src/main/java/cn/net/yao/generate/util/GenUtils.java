@@ -1,4 +1,4 @@
-package cn.net.susan.generate.util;
+package cn.net.yao.generate.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -7,14 +7,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.velocity.VelocityContext;
-import cn.net.susan.generate.config.GenConfig;
-import cn.net.susan.generate.domain.ColumnInfo;
-import cn.net.susan.generate.domain.TableInfo;
+import cn.net.yao.generate.config.GenConfig;
+import cn.net.yao.generate.domain.ColumnInfo;
+import cn.net.yao.generate.domain.TableInfo;
 
 public class GenUtils {
 
     private static final String MYBATIS_PATH = "main/resources/mapper";
     private static final String VUE_PATH = "main/resources/templates";
+    private static final String REACT_PATH = "main/resources/templates";
 
     public static Map<String, String> javaTypeMap = new HashMap<>();
 
@@ -89,6 +90,8 @@ public class GenUtils {
         templates.add("vm/xml/Mapper.xml.vm");
         templates.add("vm/vue/api.js.vm");
         templates.add("vm/vue/index.vue.vm");
+        templates.add("vm/react/api.ts.vm");
+        templates.add("vm/react/index.tsx.vm");
         templates.add("vm/java/MapperTest.java.vm");
         templates.add("vm/java/ServiceTest.java.vm");
         templates.add("vm/java/ControllerTest.java.vm");
@@ -165,6 +168,12 @@ public class GenUtils {
         }
         if (template.contains("index.vue.vm")) {
             return VUE_PATH + "/" + classname + "/index.vue";
+        }
+        if (template.contains("api.ts.vm")) {
+            return REACT_PATH + "/" + classname + "/api.ts";
+        }
+        if (template.contains("react/index.tsx.vm")) {
+            return REACT_PATH + "/" + classname + "/index.tsx";
         }
         if (template.contains("MapperTest.java.vm")) {
             return "test/java/" + packageName.replace(".", "/") + "/mapper/" + className + "MapperTest.java";

@@ -1,36 +1,33 @@
 import request from '@/utils/request'
 
 export function getPage(params) {
-    const data = params
-    return request({
-        url: '/v1/${classname}/searchByPage',
-        method: 'post',
-        data
-    })
+  return request({
+    url: '/v1/${classname}/searchByPage',
+    method: 'post',
+    data: params
+  })
 }
 
 export function add(data) {
-    return request({
-        url: 'v1/${classname}/insert',
-        method: 'post',
-        data
-    })
-}
-
-export function del(ids) {
-    return request({
-        url: 'v1/${classname}/deleteByIds',
-        method: 'post',
-        data: ids
-    })
+  return request({
+    url: '/v1/${classname}/insert',
+    method: 'post',
+    data
+  })
 }
 
 export function edit(data) {
-    return request({
-        url: 'v1/${classname}/update',
-        method: 'post',
-        data
-    })
+  return request({
+    url: '/v1/${classname}/update',
+    method: 'post',
+    data
+  })
 }
 
-export default { add, edit, del, getPage }
+export function del(ids) {
+  return request({
+    url: '/v1/${classname}/deleteByIds',
+    method: 'post',
+    data: ids
+  })
+}

@@ -1,4 +1,4 @@
-package cn.net.susan.generate.controller;
+package cn.net.yao.generate.controller;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import cn.net.susan.generate.domain.GenResult;
-import cn.net.susan.generate.domain.SqlGenRequest;
-import cn.net.susan.generate.domain.TableInfo;
-import cn.net.susan.generate.domain.TemplateRequest;
-import cn.net.susan.generate.service.IGenService;
+import cn.net.yao.generate.domain.GenResult;
+import cn.net.yao.generate.domain.SqlGenRequest;
+import cn.net.yao.generate.domain.TableInfo;
+import cn.net.yao.generate.domain.TemplateRequest;
+import cn.net.yao.generate.service.IGenService;
 
 @RestController
 @RequestMapping("/api/gen")

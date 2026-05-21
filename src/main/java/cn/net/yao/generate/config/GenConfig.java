@@ -1,4 +1,4 @@
-package cn.net.susan.generate.config;
+package cn.net.yao.generate.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

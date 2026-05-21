@@ -1,8 +1,8 @@
-package cn.net.susan.generate.service;
+package cn.net.yao.generate.service;
 
 import java.util.List;
 
-import cn.net.susan.generate.domain.TableInfo;
+import cn.net.yao.generate.domain.TableInfo;
 
 public interface IGenService {
 

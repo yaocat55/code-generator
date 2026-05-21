@@ -1,4 +1,4 @@
-package cn.net.susan.generate.domain;
+package cn.net.yao.generate.domain;
 
 import java.io.Serializable;
 

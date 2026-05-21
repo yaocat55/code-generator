@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
  * @date ${datetime}
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = cn.net.susan.generate.Application.class)
+@SpringBootTest(classes = cn.net.yao.generate.Application.class)
 @Transactional
 public class ${className}ServiceTest {
 

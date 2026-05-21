@@ -1,4 +1,4 @@
-package cn.net.susan.generate.util;
+package cn.net.yao.generate.util;
 
 public class StrFormatter {
     public static final String EMPTY_JSON = "{}";

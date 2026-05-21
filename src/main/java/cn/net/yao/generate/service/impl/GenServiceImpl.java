@@ -1,4 +1,4 @@
-package cn.net.susan.generate.service.impl;
+package cn.net.yao.generate.service.impl;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -16,15 +16,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import cn.net.susan.generate.config.GenConfig;
-import cn.net.susan.generate.domain.ColumnInfo;
-import cn.net.susan.generate.domain.TableInfo;
-import cn.net.susan.generate.service.IGenService;
-import cn.net.susan.generate.util.CharsetKit;
-import cn.net.susan.generate.util.GenUtils;
-import cn.net.susan.generate.util.SqlParser;
-import cn.net.susan.generate.util.StringUtil;
-import cn.net.susan.generate.util.VelocityInitializer;
+import cn.net.yao.generate.config.GenConfig;
+import cn.net.yao.generate.domain.TableInfo;
+import cn.net.yao.generate.service.IGenService;
+import cn.net.yao.generate.util.CharsetKit;
+import cn.net.yao.generate.util.GenUtils;
+import cn.net.yao.generate.util.SqlParser;
+import cn.net.yao.generate.util.StringUtil;
+import cn.net.yao.generate.util.VelocityInitializer;
 
 @Service
 public class GenServiceImpl implements IGenService {
@@ -258,6 +257,7 @@ public class GenServiceImpl implements IGenService {
             else if (template.contains("Service.java.vm") && codeTypeList.contains("service")) include = true;
             else if (template.contains("Controller.java.vm") && codeTypeList.contains("controller")) include = true;
             else if ((template.contains("api.js.vm") || template.contains("index.vue.vm")) && codeTypeList.contains("vue")) include = true;
+            else if ((template.contains("api.ts.vm") || template.contains("react/index.tsx.vm")) && codeTypeList.contains("react")) include = true;
             else if (template.contains("Test.java.vm") && codeTypeList.contains("test")) include = true;
             else if (template.contains("ConditionEntity.java.vm") && codeTypeList.contains("entity")) include = true;
 

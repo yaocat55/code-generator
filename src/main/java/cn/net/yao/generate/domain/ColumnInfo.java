@@ -1,4 +1,4 @@
-package cn.net.susan.generate.domain;
+package cn.net.yao.generate.domain;
 
 public class ColumnInfo {
     private String columnName;

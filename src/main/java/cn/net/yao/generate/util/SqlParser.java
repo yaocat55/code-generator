@@ -1,12 +1,12 @@
-package cn.net.susan.generate.util;
+package cn.net.yao.generate.util;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cn.net.susan.generate.domain.ColumnInfo;
-import cn.net.susan.generate.domain.TableInfo;
+import cn.net.yao.generate.domain.ColumnInfo;
+import cn.net.yao.generate.domain.TableInfo;
 
 /**
  * SQL parser - parses CREATE TABLE statements to extract table and column metadata.

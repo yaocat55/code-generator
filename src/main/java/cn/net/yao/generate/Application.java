@@ -1,4 +1,4 @@
-package cn.net.susan.generate;
+package cn.net.yao.generate;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;

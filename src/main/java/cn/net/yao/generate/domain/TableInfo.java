@@ -1,6 +1,6 @@
-package cn.net.susan.generate.domain;
+package cn.net.yao.generate.domain;
 
-import cn.net.susan.generate.util.StringUtil;
+import cn.net.yao.generate.util.StringUtil;
 import java.util.List;
 
 public class TableInfo extends BaseEntity {

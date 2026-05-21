@@ -1,4 +1,4 @@
-package cn.net.susan.generate.util;
+package cn.net.yao.generate.util;
 
 public class Convert {
 

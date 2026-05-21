@@ -1,4 +1,4 @@
-package cn.net.susan.generate.util;
+package cn.net.yao.generate.util;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
