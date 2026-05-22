@@ -346,6 +346,138 @@ SQL 类型到 Java 类型的默认映射：
 
 ---
 
+## 生成的增删改查方法
+
+以下列出勾选 Service / Controller / Mapper / XML 后，生成代码中实际包含的全部方法。
+
+### Service（`XxxService.java`）
+
+| 方法签名 | 说明 |
+|----------|------|
+| `XxxEntity findById(Long id)` | 根据主键 ID 查询单条记录 |
+| `ResponsePageEntity<XxxEntity> searchByPage(XxxConditionEntity condition)` | 条件分页查询，自动统计总数，count=0 返回空页 |
+| `int insert(XxxEntity entity)` | 新增记录，带 `@Transactional` 事务 |
+| `int update(XxxEntity entity)` | 修改记录，带 `@Transactional` 事务 |
+| `int deleteByIds(List<Long> ids)` | 批量逻辑删除（`is_del = 1`），删除前校验记录存在 |
+| `BaseMapper getBaseMapper()` | 返回 Mapper 实例，供父类 `BaseService` 通用方法使用 |
+
+### Controller（`XxxController.java`）
+
+| HTTP 方法 | 路径 | 说明 |
+|-----------|------|------|
+| `GET` | `/v1/{classname}/findById?id=` | 根据 ID 查询单条 |
+| `POST` | `/v1/{classname}/searchByPage` | 条件分页查询，`@RequestBody` 接收条件实体 |
+| `POST` | `/v1/{classname}/insert` | 新增记录 |
+| `POST` | `/v1/{classname}/update` | 修改记录 |
+| `POST` | `/v1/{classname}/deleteByIds` | 批量删除，接收 `List<Long>` |
+
+> 所有接口带 Swagger `@Api` / `@ApiOperation` 注解，参数校验使用 `@NotNull` / `@Validated`。
+
+### Mapper（`XxxMapper.java`）
+
+| 方法签名 | 说明 |
+|----------|------|
+| `XxxEntity findById(Long id)` | 根据主键查询单条 |
+| `int insert(XxxEntity entity)` | 新增记录 |
+| `int update(XxxEntity entity)` | 修改记录 |
+| `int deleteByIds(@Param("ids") List<Long> ids, @Param("entity") XxxEntity entity)` | 批量逻辑删除 |
+| `List<XxxEntity> findByIds(List<Long> ids)` | 根据 ID 集合批量查询 |
+| *(继承自 BaseMapper)* `List<XxxEntity> searchByCondition(XxxConditionEntity condition)` | 条件查询（含分页参数） |
+| *(继承自 BaseMapper)* `int searchCount(XxxConditionEntity condition)` | 条件统计总数 |
+
+### XML（`XxxMapper.xml`）
+
+| SQL 片段 / 语句 | 说明 |
+|-----------------|------|
+| `resultMap` — `XxxResult` | 字段 → 属性的映射，遍历所有列生成 `<result>` |
+| `sql` — `selectXxxColumn` | 查询列清单（逗号分隔），供各 SELECT 复用 |
+| `sql` — `queryWhere` | 动态 WHERE 条件：遍历所有字段判空生成 `AND col = #{val}`，末尾固定 `AND is_del = 0` |
+| `sql` — `paginationSql` | 分页片段：`LIMIT #{pageBegin}, #{pageSize}`，仅当 `pageSize > 0` 时追加 |
+| `select` — `findById` | `SELECT ... FROM table WHERE id = #{id}` |
+| `select` — `searchByCondition` | `SELECT ... FROM table` + queryWhere + paginationSql |
+| `select` — `searchCount` | `SELECT COUNT(*) FROM table` + queryWhere |
+| `select` — `findByIds` | `SELECT ... FROM table WHERE id IN (...)` |
+| `insert` | `INSERT INTO table (...) VALUES (...)` — 动态 `<if>` 判空，自增主键自动跳过 |
+| `update` | `UPDATE table SET col=#{val}, ...` — 动态 `<if>` 判空排除主键列，自动带 `update_time=now(3)` |
+| `delete` — `deleteByIds` | `UPDATE table SET is_del=1, update_time=now(3), ... WHERE id IN (...)` — 逻辑删除 |
+
+### 关键行为说明
+
+- **分页机制**：分页参数由 `ConditionEntity` 父类统一携带（`pageNum`、`pageSize`、`pageBegin`），XML 中通过 `paginationSql` 自动追加 LIMIT。
+- **逻辑删除**：delete 操作不走 `DELETE FROM`，而是 `UPDATE ... SET is_del = 1`，同时自动填充 `update_time` 和 `update_user_id/name`。
+- **条件查询**：XML 的 `queryWhere` 遍历所有列生成等值匹配条件，且会在末尾固定拼接 `AND is_del = 0` 过滤已删除数据。
+- **审计字段**：`insert` 时自动填充 `create_time`、`create_user_id` 等字段（依赖 `FillUserUtil`），`update` 时自动设 `update_time=now(3)`。
+
+---
+
+## 生成后还需自己补充什么
+
+代码生成器产出的是标准 CRUD 骨架，以下列出实际开发中通常需要手动扩展的部分。
+
+### Service 层
+
+| 需补充内容 | 说明 |
+|------------|------|
+| 业务校验逻辑 | 生成代码只做存在性校验，字段唯一性、状态机流转、业务规则校验需自己加 |
+| 批量新增 | 模板只生成单条 `insert()`，如需一次插入多条需自行添加 `batchInsert()` |
+| 缓存注解 | 按需添加 `@Cacheable` / `@CacheEvict`，生成代码不含缓存 |
+| 自定义查询方法 | 比如"根据用户名+状态联合查询"、"查询某时间段内的记录"，需在 Service/Mapper/XML 三处联动添加 |
+| 导出功能 | 如需 Excel/CSV 导出，需自行在 Service 中实现查询+转换逻辑 |
+| 异常与错误码 | 生成代码只抛 `AssertUtil` 的通用异常，业务错误码体系需自行建立 |
+
+### Controller 层
+
+| 需补充内容 | 说明 |
+|------------|------|
+| 权限控制注解 | 如 `@PreAuthorize("@ss.hasPermi('xxx')")` 或 Shiro `@RequiresPermissions`，生成代码完全没有 |
+| 参数校验注解 | `@Valid` / `@Validated` + Entity 上的 `@NotNull` / `@NotBlank` 等需自己加 |
+| 导出/下载接口 | 文件下载端点需自行添加 |
+| 自定义查询接口 | 除 `searchByPage` 外，需列表/下拉选择/统计等接口自行追加 |
+| 接口限流/防重 | 按需加 `@RepeatSubmit`、`@RateLimiter` 等 |
+
+### Mapper 接口
+
+| 需补充内容 | 说明 |
+|------------|------|
+| 自定义查询方法 | 生成的 5 个方法只覆盖单表 CRUD，联表查询、聚合统计、复杂条件需自己声明 |
+| 批量操作 | `batchInsert()` / `batchUpdate()` 等需自行添加 |
+| 物理删除 | 生成代码统一走逻辑删除（`is_del=1`），如需真正 `DELETE FROM` 需自己写 |
+
+### XML 映射文件
+
+| 需补充内容 | 说明 |
+|------------|------|
+| `<sql>` 片段扩展 | 生成的 `queryWhere` 只做等值匹配（`=`），以下条件需自行扩展： |
+|  | • **模糊匹配**：`AND name LIKE CONCAT('%', #{name}, '%')` |
+|  | • **范围查询**：`AND create_time >= #{beginTime} AND create_time <= #{endTime}` |
+|  | • **IN 查询**：`AND status IN <foreach ...>` |
+|  | • **IS NULL / IS NOT NULL** |
+|  | • **OR 条件**：生成的全是 `AND` |
+| 排序 (ORDER BY) | 生成代码不含排序，需自行添加 `<sql>` 片段或前端传参动态排序 |
+| 联表查询 | 新增 `<resultMap>` + `<select>` 处理 JOIN |
+| 聚合查询 | `GROUP BY` + `SUM` / `COUNT` / `AVG` 等均需手写 |
+| 批量 INSERT | 遍历集合的批量插入语句需自行添加 |
+
+### Entity 实体
+
+| 需补充内容 | 说明 |
+|------------|------|
+| 校验注解 | Entity 字段上无 `@NotNull` / `@NotBlank` / `@Size` 等，需按业务自行添加 |
+| 枚举字段 | 数据库存 `int` / `varchar` 的枚举列，Java 侧建议改为 `Enum` 类型，生成的是原始类型 |
+| 冗余/展示字段 | 只生成表字段，前端展示用的关联对象名、状态文本等需自行加 `@Transient` 字段 |
+| 日期格式化 | 如需特定格式输出，加 `@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")` |
+
+### ConditionEntity 查询条件
+
+| 需补充内容 | 说明 |
+|------------|------|
+| 非等值匹配字段 | 生成的全部是等值匹配字段，如需模糊查询需加 `String nameLike`，范围查询需加 `Date createTimeStart` / `Date createTimeEnd` 等 |
+| 排序参数 | 如需前端控制排序字段和方向，加 `orderBy` / `isAsc` 等属性 |
+
+> **总结**：生成器帮你省掉的是每张表都要写的重复 CRUD 样板代码。表越多收益越大。剩下的业务差异部分（权限、校验、复杂查询、缓存、导出）仍需按需手写，但这些代码本该就因业务而异，不适合模板化。
+
+---
+
 ## 常见问题
 
 **Q: 支持哪些数据库的 SQL 语法？**
