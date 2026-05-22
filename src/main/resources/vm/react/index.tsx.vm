@@ -1,0 +1,149 @@
+import React, { useRef, useState } from 'react';
+import { Button, message } from 'antd';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable, ModalForm, ProFormText } from '@ant-design/pro-components';
+import { getPage, add, edit, del } from './api';
+import type { ${className}Record } from './api';
+
+const ${className}: React.FC = () => {
+  const actionRef = useRef<ActionType>();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<Partial<${className}Record>>({});
+  const formRef = useRef<any>();
+
+  const fetchData = async (params: any) => {
+    const { current, pageSize, ...searchParams } = params;
+    const res = await getPage({ page: current, size: pageSize, ...searchParams });
+    return {
+      data: res.content,
+      total: res.totalElements,
+      success: true,
+    };
+  };
+
+  const handleDelete = async (ids: number[]) => {
+    try {
+      await del(ids);
+      message.success('删除成功');
+      actionRef.current?.reload();
+    } catch {
+      message.error('删除失败');
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    try {
+      if (editingRecord.id) {
+        await edit({ ...values, id: editingRecord.id });
+        message.success('更新成功');
+      } else {
+        await add(values);
+        message.success('新增成功');
+      }
+      setModalOpen(false);
+      actionRef.current?.reload();
+      return true;
+    } catch {
+      message.error('操作失败');
+      return false;
+    }
+  };
+
+  const columns: ProColumns<${className}Record>[] = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+      hideInSearch: true,
+    },
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+    {
+      title: '$column.columnComment',
+      dataIndex: '$column.attrname',
+      key: '$column.attrname',
+    },
+#end
+#end
+    {
+      title: '创建人',
+      dataIndex: 'createUserName',
+      key: 'createUserName',
+      hideInSearch: true,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      key: 'createTime',
+      valueType: 'dateTime',
+      hideInSearch: true,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      valueType: 'option',
+      width: 150,
+      render: (_, record) => [
+        <a key="edit" onClick={() => { setEditingRecord(record); setModalOpen(true); }}>
+          编辑
+        </a>,
+        <a key="delete" onClick={() => handleDelete([record.id])}>
+          删除
+        </a>,
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <ProTable<${className}Record>
+        headerTitle="${tableComment}"
+        actionRef={actionRef}
+        rowKey="id"
+        columns={columns}
+        request={fetchData}
+        rowSelection={{}}
+        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
+          <span>
+            已选择 {selectedRowKeys.length} 项
+            <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+              取消选择
+            </a>
+          </span>
+        )}
+        tableAlertOptionRender={({ selectedRowKeys }) => (
+          <a onClick={() => handleDelete(selectedRowKeys as number[])}>
+            批量删除
+          </a>
+        )}
+        toolBarRender={() => [
+          <Button type="primary" key="add" onClick={() => { setEditingRecord({}); setModalOpen(true); }}>
+            新增
+          </Button>,
+        ]}
+      />
+
+      <ModalForm
+        title={editingRecord.id ? '编辑${tableComment}' : '新增${tableComment}'}
+        open={modalOpen}
+        onOpenChange={(open) => { if (!open) setModalOpen(false); }}
+        onFinish={handleSubmit}
+        formRef={formRef}
+        initialValues={editingRecord}
+      >
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+        <ProFormText
+          name="$column.attrname"
+          label="$column.columnComment"
+          rules={[{ required: true, message: '请输入$column.columnComment' }]}
+        />
+#end
+#end
+      </ModalForm>
+    </>
+  );
+};
+
+export default ${className};
