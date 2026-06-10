@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cd /d D:\\\\github_project\\\\code-generator)",
-      "Bash(mvn compile *)"
-    ]
-  }
-}
