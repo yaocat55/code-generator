@@ -24,3 +24,7 @@ Thumbs.db
 .mvn/
 .m2/
 .gradle/
+
+# Claude
+.claude/
+Claude/
