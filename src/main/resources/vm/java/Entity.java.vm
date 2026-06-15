@@ -38,7 +38,7 @@ import io.swagger.annotations.ApiModelProperty;
 public class ${className}Entity extends BaseEntity {
 
 #foreach ($column in $columns)
-#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'isDel')
 
 	/**
 	 * $column.columnComment

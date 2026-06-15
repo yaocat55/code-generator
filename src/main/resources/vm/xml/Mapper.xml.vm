@@ -40,7 +40,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT
         <include refid="select${className}Column"/>
         FROM ${tableName}
-        WHERE id = #{id}
+        WHERE id = #{id} AND is_del = 0
     </select>
 
     <select id="searchByCondition"
@@ -67,9 +67,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         UPDATE ${tableName}
         <trim prefix="SET" suffixOverrides=",">
             #foreach($column in $columns)
-                #if($column.columnName != $primaryKey.columnName)
+                #if($column.columnName != $primaryKey.columnName && $column.attrname != 'updateTime')
 
-                    <if test="$column.attrname != null #if($column.attrType == 'String' and $column.attrname != 'updateTime') and $column.attrname != ''#end">
+                    <if test="$column.attrname != null #if($column.attrType == 'String') and $column.attrname != ''#end">
                         $column.columnName = #{$column.attrname},
                     </if>
 
@@ -77,13 +77,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #end
             update_time=now(3)
         </trim>
-        WHERE id = #{id}
+        WHERE id = #{id} AND is_del = 0 AND update_time = #{updateTime}
     </update>
 
     <delete id="deleteByIds">
         UPDATE ${tableName}
         SET is_del = 1,update_time=now(3),update_user_id=#{entity.updateUserId},update_user_name=#{entity.updateUserName}
-        WHERE id IN
+        WHERE is_del = 0 AND id IN
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
@@ -119,7 +119,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT
           <include refid="select${className}Column"/>
         FROM ${tableName}
-        WHERE id IN
+        WHERE is_del = 0 AND id IN
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>

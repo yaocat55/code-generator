@@ -3,96 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Generator - SQL to CRUD</title>
+    <title>Code Generator — Admin 后台管理代码生成器</title>
     <style>
         :root {
-            --bg: #f0f2f5;
-            --card-bg: #ffffff;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --primary-light: #eef2ff;
-            --text: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --radius: 12px;
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+            /* MD3 Dark Color Tokens */
+            --md-sys-color-background: #141218;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #2B2930;
+            --md-sys-color-surface-container-low: #1E1C21;
+            --md-sys-color-surface-container: #222026;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-tint: #D0BCFF;
+
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #643B49;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+
+            --md-sys-color-error: #F2B8B5;
+            --md-sys-color-on-error: #601410;
+
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-on-surface: #E6E1E5;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+
+            /* Radius */
+            --md-shape-xs: 8px;
+            --md-shape-sm: 12px;
+            --md-shape-md: 16px;
+            --md-shape-lg: 20px;
+            --md-shape-xl: 28px;
+            --md-shape-full: 100px;
+
+            /* Elevation */
+            --md-elevation-1: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+            --md-elevation-2: 0 1px 2px 0 rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+            --md-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px 0 rgba(0,0,0,0.3);
+
+            /* Typography */
+            --md-typescale-display-small: 400 32px/40px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-headline-medium: 400 24px/32px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-title-medium: 500 16px/24px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-title-small: 500 14px/20px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-label-large: 500 14px/20px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-label-medium: 500 12px/16px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-body-large: 400 16px/24px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-body-medium: 400 14px/20px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
+            --md-typescale-body-small: 400 12px/16px 'Roboto Flex', 'Noto Sans SC', system-ui, sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
+            font: var(--md-typescale-body-medium);
+            background: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Header */
-        .header {
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            height: 56px;
+        /* ===== Top App Bar ===== */
+        .top-app-bar {
+            background: var(--md-sys-color-surface);
+            height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            padding: 0 24px;
+            gap: 16px;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow);
+            box-shadow: var(--md-elevation-1);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .header-logo .icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--primary), #818cf8);
-            border-radius: 8px;
+        .top-app-bar__leading {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--md-shape-full);
+            background: linear-gradient(135deg, var(--md-sys-color-primary-container), #6C4FB8);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 16px;
+            color: var(--md-sys-color-on-primary-container);
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
         }
-        .header-actions {
+        .top-app-bar__title {
+            font: var(--md-typescale-title-medium);
+            color: var(--md-sys-color-on-surface);
+        }
+        .top-app-bar__subtitle {
+            font: var(--md-typescale-label-medium);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-left: 4px;
+        }
+        .top-app-bar__actions {
+            margin-left: auto;
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        .badge {
-            font-size: 12px;
-            padding: 2px 10px;
-            border-radius: 100px;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-weight: 500;
+
+        /* ===== MD3 Assist Chip ===== */
+        .assist-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: var(--md-shape-sm);
+            border: 1px solid var(--md-sys-color-outline);
+            background: transparent;
+            color: var(--md-sys-color-on-surface-variant);
+            font: var(--md-typescale-label-medium);
+            cursor: default;
+            transition: all 0.2s;
+        }
+        .assist-chip--elevated {
+            background: var(--md-sys-color-surface-container-low);
+            border-color: transparent;
+            box-shadow: var(--md-elevation-1);
         }
 
-        /* Main Layout */
+        /* ===== Main Layout ===== */
         .main-container {
             display: flex;
             gap: 20px;
-            padding: 20px 24px;
-            max-width: 1500px;
-            margin: 0 auto;
-            min-height: calc(100vh - 56px);
-        }
-        .panel {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
             padding: 24px;
+            max-width: 1520px;
+            margin: 0 auto;
+            min-height: calc(100vh - 64px);
         }
         .panel-left {
             flex: 1;
@@ -102,490 +153,668 @@
             gap: 16px;
         }
         .panel-right {
-            width: 500px;
+            width: 520px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
             gap: 16px;
         }
 
-        .panel-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        /* ===== MD3 Card ===== */
+        .card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--md-shape-md);
+            padding: 24px;
+            box-shadow: var(--md-elevation-1);
+            border: none;
         }
-        .panel-title .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--primary);
+        .card--filled {
+            background: var(--md-sys-color-surface-container-high);
         }
 
-        /* Tabs */
+        /* ===== MD3 Tabs (Secondary / Pill style) ===== */
         .tabs {
             display: flex;
             gap: 0;
-            border-bottom: 2px solid var(--border);
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: var(--md-shape-full);
+            padding: 4px;
             margin-bottom: 16px;
+            border: none;
         }
         .tab {
-            padding: 8px 16px;
+            flex: 1;
+            padding: 10px 20px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
-            background: none;
-            border-top: none;
-            border-left: none;
-            border-right: none;
+            font: var(--md-typescale-label-large);
+            color: var(--md-sys-color-on-surface-variant);
+            border-radius: var(--md-shape-full);
+            border: none;
+            background: transparent;
+            transition: all 0.25s;
+            text-align: center;
+            position: relative;
         }
-        .tab:hover { color: var(--text); }
+        .tab:hover {
+            color: var(--md-sys-color-on-surface);
+            background: rgba(208, 188, 255, 0.08);
+        }
         .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            box-shadow: var(--md-elevation-1);
         }
 
-        /* Upload Zone */
+        /* ===== Upload Zone ===== */
         .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius);
-            padding: 40px;
+            border: 2px dashed var(--md-sys-color-outline-variant);
+            border-radius: var(--md-shape-md);
+            padding: 48px 24px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
-            background: #fafbfc;
+            transition: all 0.25s;
+            background: var(--md-sys-color-surface-container-low);
         }
         .upload-zone:hover, .upload-zone.drag-over {
-            border-color: var(--primary);
-            background: var(--primary-light);
+            border-color: var(--md-sys-color-primary);
+            background: rgba(208, 188, 255, 0.06);
         }
-        .upload-zone .upload-icon {
-            font-size: 40px;
-            margin-bottom: 12px;
+        .upload-zone__icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            border-radius: var(--md-shape-full);
+            background: var(--md-sys-color-secondary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
         }
-        .upload-zone .upload-text {
-            font-size: 14px;
-            color: var(--text-secondary);
+        .upload-zone__text {
+            font: var(--md-typescale-body-large);
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 4px;
         }
-        .upload-zone .upload-hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 8px;
+        .upload-zone__hint {
+            font: var(--md-typescale-body-small);
+            color: var(--md-sys-color-on-surface-variant);
         }
         .upload-zone input[type="file"] { display: none; }
 
-        /* SQL Textarea */
+        /* ===== SQL Editor ===== */
         .sql-editor {
             width: 100%;
-            min-height: 320px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            min-height: 340px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: var(--md-shape-sm);
             padding: 16px;
             font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.7;
             resize: vertical;
-            background: #1e1e2e;
-            color: #cdd6f4;
+            background: #0F0D13;
+            color: #E6E1E5;
             tab-size: 4;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .sql-editor:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(208, 188, 255, 0.12);
+        }
+        .sql-editor::placeholder {
+            color: #6B6572;
         }
 
-        /* Buttons */
+        /* ===== MD3 Buttons ===== */
         .btn {
-            padding: 8px 18px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: var(--md-shape-full);
+            font: var(--md-typescale-label-large);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            height: 40px;
         }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-primary:disabled {
-            opacity: 0.5;
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled {
+            opacity: 0.38;
             cursor: not-allowed;
-        }
-        .btn-outline {
-            background: white;
-            border-color: var(--border);
-            color: var(--text);
-        }
-        .btn-outline:hover { background: #f8fafc; }
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-        .btn-success:hover { background: #059669; }
-        .btn-sm {
-            padding: 4px 12px;
-            font-size: 12px;
-            border-radius: 6px;
+            transform: none;
         }
 
-        /* Form */
-        .form-group {
-            margin-bottom: 12px;
+        /* Filled */
+        .btn--filled {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: var(--md-elevation-1);
         }
-        .form-group label {
+        .btn--filled:hover:not(:disabled) {
+            box-shadow: var(--md-elevation-2);
+            filter: brightness(1.08);
+        }
+
+        /* Tonal */
+        .btn--tonal {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        .btn--tonal:hover:not(:disabled) {
+            filter: brightness(1.1);
+            box-shadow: var(--md-elevation-1);
+        }
+
+        /* Outlined */
+        .btn--outlined {
+            background: transparent;
+            border: 1px solid var(--md-sys-color-outline);
+            color: var(--md-sys-color-primary);
+        }
+        .btn--outlined:hover:not(:disabled) {
+            background: rgba(208, 188, 255, 0.08);
+        }
+
+        /* Success (tertiary) */
+        .btn--tertiary {
+            background: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
+            box-shadow: var(--md-elevation-1);
+        }
+        .btn--tertiary:hover:not(:disabled) {
+            box-shadow: var(--md-elevation-2);
+            filter: brightness(1.08);
+        }
+
+        .btn--sm {
+            height: 32px;
+            padding: 4px 16px;
+            font: var(--md-typescale-label-medium);
+        }
+        .btn--full { width: 100%; }
+
+        /* ===== MD3 Text Field (Outlined) ===== */
+        .text-field {
+            margin-bottom: 16px;
+        }
+        .text-field__label {
             display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
+            font: var(--md-typescale-label-medium);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 6px;
         }
-        .form-input {
+        .text-field__input {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.2s;
+            height: 56px;
+            padding: 0 16px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--md-shape-xs);
+            background: transparent;
+            color: var(--md-sys-color-on-surface);
+            font: var(--md-typescale-body-large);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .form-input:focus {
+        .text-field__input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.15);
+        }
+        .text-field__input::placeholder {
+            color: var(--md-sys-color-on-surface-variant);
+            opacity: 0.6;
+        }
+        .text-field__supporting {
+            font: var(--md-typescale-body-small);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 4px;
         }
 
-        /* Checkbox group */
-        .checkbox-group {
+        /* ===== MD3 Filter Chip Group ===== */
+        .chip-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 8px;
         }
-        .checkbox-item {
+        .chip {
             display: flex;
             align-items: center;
             gap: 4px;
-            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: var(--md-shape-sm);
+            border: 1px solid var(--md-sys-color-outline);
+            background: transparent;
+            color: var(--md-sys-color-on-surface-variant);
+            font: var(--md-typescale-label-medium);
             cursor: pointer;
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
             transition: all 0.2s;
             user-select: none;
+            height: 32px;
         }
-        .checkbox-item:hover { border-color: var(--primary); }
-        .checkbox-item.checked {
-            background: var(--primary-light);
-            border-color: var(--primary);
-            color: var(--primary);
+        .chip:hover {
+            background: rgba(208, 188, 255, 0.08);
+            border-color: var(--md-sys-color-on-surface-variant);
         }
-        .checkbox-item input { display: none; }
+        .chip--selected {
+            background: var(--md-sys-color-secondary-container);
+            border-color: transparent;
+            color: var(--md-sys-color-on-secondary-container);
+            box-shadow: var(--md-elevation-1);
+        }
+        .chip input { display: none; }
 
-        /* Table Preview */
+        /* ===== Table Preview ===== */
         .table-preview {
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: var(--md-shape-sm);
             overflow: hidden;
-            max-height: 400px;
+            max-height: 420px;
         }
-        .table-preview-header {
-            background: #f8fafc;
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .table-preview-body {
+        .table-preview__body {
             overflow-y: auto;
-            max-height: 340px;
+            max-height: 368px;
         }
         .table-item {
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
         .table-item:last-child { border-bottom: none; }
-        .table-item-header {
-            padding: 10px 16px;
+        .table-item__header {
+            padding: 12px 16px;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
-            font-weight: 500;
+            font: var(--md-typescale-title-small);
             transition: background 0.15s;
+            color: var(--md-sys-color-on-surface);
         }
-        .table-item-header:hover { background: #f8fafc; }
-        .table-item-header .table-name {
-            color: var(--primary);
+        .table-item__header:hover {
+            background: rgba(208, 188, 255, 0.04);
+        }
+        .table-item__name {
+            color: var(--md-sys-color-primary);
             font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
         }
-        .table-item-header .table-comment {
-            color: var(--text-secondary);
+        .table-item__comment {
+            color: var(--md-sys-color-on-surface-variant);
+            font: var(--md-typescale-body-small);
+            margin-left: 8px;
+            font-weight: 400;
+        }
+        .table-item__arrow {
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 12px;
+            transition: transform 0.2s;
         }
+        .table-item__arrow.open { transform: rotate(180deg); }
+
         .table-columns {
             display: none;
-            padding: 8px 16px 12px;
-            background: #fafbfc;
+            padding: 8px 16px 14px;
+            background: rgba(208, 188, 255, 0.03);
+            border-top: 1px solid var(--md-sys-color-outline-variant);
         }
         .table-columns.open { display: block; }
         .column-row {
             display: flex;
-            gap: 8px;
-            padding: 3px 0;
-            font-size: 12px;
+            gap: 12px;
+            padding: 4px 0;
+            font: var(--md-typescale-body-small);
             font-family: 'JetBrains Mono', monospace;
         }
-        .column-row .col-name { color: var(--text); font-weight: 500; min-width: 140px; }
-        .column-row .col-type { color: var(--primary); min-width: 90px; }
-        .column-row .col-comment { color: var(--text-secondary); flex: 1; }
-        .column-row .col-java { color: #f59e0b; }
+        .column-row__name { color: var(--md-sys-color-on-surface); font-weight: 500; min-width: 150px; }
+        .column-row__type { color: var(--md-sys-color-primary); min-width: 100px; }
+        .column-row__java { color: var(--md-sys-color-tertiary); min-width: 80px; }
+        .column-row__comment { color: var(--md-sys-color-on-surface-variant); flex: 1; }
 
-        /* Toast */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .toast {
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: white;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: var(--shadow-lg);
-            animation: slideIn 0.3s ease;
-            max-width: 420px;
-        }
-        .toast.success { background: var(--success); }
-        .toast.error { background: var(--danger); }
-        .toast.info { background: var(--primary); }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* Template manager */
+        /* ===== Template Manager ===== */
         .template-manager {
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: var(--md-shape-sm);
             overflow: hidden;
         }
-        .template-manager-header {
-            background: #f8fafc;
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border);
+        .template-manager__header {
+            background: var(--md-sys-color-surface-container-low);
+            padding: 12px 16px;
+            font: var(--md-typescale-title-small);
+            cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: pointer;
+            color: var(--md-sys-color-on-surface);
+            transition: background 0.15s;
         }
-        .template-manager-body {
-            display: none;
+        .template-manager__header:hover {
+            background: rgba(208, 188, 255, 0.04);
         }
-        .template-manager-body.open { display: block; }
+        .template-manager__arrow {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        .template-manager__arrow.open { transform: rotate(180deg); }
+
+        .template-manager__body { display: none; }
+        .template-manager__body.open { display: block; }
         .template-list {
             max-height: 200px;
             overflow-y: auto;
         }
-        .template-list-item {
-            padding: 8px 16px;
+        .template-list__item {
+            padding: 10px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border);
+            font: var(--md-typescale-body-small);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
             cursor: pointer;
             transition: background 0.15s;
+            color: var(--md-sys-color-on-surface-variant);
         }
-        .template-list-item:hover { background: #f8fafc; }
-        .template-list-item.active { background: var(--primary-light); }
-        .template-editor {
-            border-top: 1px solid var(--border);
+        .template-list__item:hover {
+            background: rgba(208, 188, 255, 0.04);
         }
+        .template-list__item.active {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        .template-editor { border-top: 1px solid var(--md-sys-color-outline-variant); }
         .template-editor textarea {
             width: 100%;
-            min-height: 260px;
+            min-height: 280px;
             border: none;
             padding: 16px;
             font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.7;
             resize: vertical;
-            background: #1e1e2e;
-            color: #cdd6f4;
+            background: #0F0D13;
+            color: #E6E1E5;
         }
         .template-editor textarea:focus { outline: none; }
-        .template-editor-actions {
-            padding: 10px 16px;
+        .template-editor__actions {
+            padding: 12px 16px;
             display: flex;
             gap: 8px;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
+            background: var(--md-sys-color-surface-container-low);
+            border-top: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        /* Loading spinner */
+        /* ===== Snackbar (MD3 Toast) ===== */
+        .snackbar-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 8px;
+            align-items: center;
+        }
+        .snackbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            border-radius: var(--md-shape-xs);
+            font: var(--md-typescale-body-medium);
+            box-shadow: var(--md-elevation-3);
+            animation: snackbarIn 0.3s ease;
+            color: var(--md-sys-color-on-surface);
+            min-width: 280px;
+            max-width: 520px;
+        }
+        .snackbar--success {
+            background: #1B3629;
+            color: #A5D6A7;
+        }
+        .snackbar--error {
+            background: #3B181C;
+            color: #F2B8B5;
+        }
+        .snackbar--info {
+            background: var(--md-sys-color-inverse-surface, #2B2930);
+            color: var(--md-sys-color-on-surface);
+        }
+        .snackbar__action {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--md-sys-color-primary);
+            font: var(--md-typescale-label-large);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: var(--md-shape-full);
+            transition: background 0.2s;
+        }
+        .snackbar__action:hover { background: rgba(208, 188, 255, 0.08); }
+
+        @keyframes snackbarIn {
+            from { transform: translateY(16px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ===== Section Title ===== */
+        .section-title {
+            font: var(--md-typescale-title-small);
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title__icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+        }
+        .section-title__badge {
+            font: var(--md-typescale-label-medium);
+            color: var(--md-sys-color-on-surface-variant);
+            font-weight: 400;
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            text-align: center;
+            padding: 36px 20px;
+            color: var(--md-sys-color-on-surface-variant);
+            font: var(--md-typescale-body-medium);
+        }
+        .empty-state__icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ===== Spinner ===== */
         .spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(208, 188, 255, 0.3);
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.6s linear infinite;
+            border-top-color: var(--md-sys-color-primary);
+            animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-secondary);
-            font-size: 14px;
+        /* ===== File Info ===== */
+        .file-info {
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: var(--md-shape-xs);
+            background: rgba(208, 188, 255, 0.06);
+            font: var(--md-typescale-body-small);
+            color: var(--md-sys-color-on-surface-variant);
         }
 
-        /* Scrollbar */
+        /* ===== Scrollbar ===== */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--md-sys-color-outline-variant);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--md-sys-color-outline); }
 
-        @media (max-width: 900px) {
-            .main-container { flex-direction: column; padding: 12px; }
+        /* ===== Responsive ===== */
+        @media (max-width: 960px) {
+            .main-container { flex-direction: column; padding: 16px; }
             .panel-right { width: 100%; }
+            .top-app-bar { padding: 0 16px; }
+            .top-app-bar__subtitle { display: none; }
+        }
+
+        /* ===== Selection ===== */
+        ::selection {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
     </style>
+
+    <!-- Roboto Flex + Noto Sans SC for CJK + Material Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<header class="header">
-    <div class="header-logo">
-        <div class="icon">{ }</div>
-        <span>Code Generator</span>
+<!-- ===== Top App Bar ===== -->
+<header class="top-app-bar">
+    <div class="top-app-bar__leading">{ }</div>
+    <div>
+        <span class="top-app-bar__title">Code Generator</span>
+        <span class="top-app-bar__subtitle">Admin 后台管理代码生成器</span>
     </div>
-    <div class="header-actions">
-        <span class="badge">JDK 17</span>
-        <span class="badge">Spring Boot 2.7</span>
+    <div class="top-app-bar__actions">
+        <span class="assist-chip assist-chip--elevated">JDK 17</span>
+        <span class="assist-chip">Spring Boot 3.6</span>
     </div>
 </header>
 
+<!-- ===== Main ===== -->
 <div class="main-container">
-    <!-- Left Panel: SQL Input -->
-    <div class="panel panel-left">
+    <!-- ========== 左侧：SQL 输入 ========== -->
+    <div class="panel-left">
+        <!-- 标签页 -->
         <div class="tabs">
-            <button class="tab active" data-tab="upload">Upload SQL File</button>
-            <button class="tab" data-tab="paste">Paste SQL</button>
+            <button class="tab active" data-tab="upload">📂 上传 SQL 文件</button>
+            <button class="tab" data-tab="paste">📝 粘贴 SQL</button>
         </div>
 
-        <!-- Upload Tab -->
+        <!-- 上传标签 -->
         <div id="tab-upload" class="tab-content">
             <div class="upload-zone" id="uploadZone">
-                <div class="upload-icon">&#128196;</div>
-                <div class="upload-text">Drag & drop a <strong>.sql</strong> file here</div>
-                <div class="upload-hint">or click to browse — supports CREATE TABLE statements</div>
+                <div class="upload-zone__icon">📄</div>
+                <div class="upload-zone__text">拖拽 <strong>.sql</strong> 文件到此处</div>
+                <div class="upload-zone__hint">或点击选择文件 — 支持 CREATE TABLE 语句</div>
                 <input type="file" id="fileInput" accept=".sql,.txt">
             </div>
-            <div id="fileInfo" style="margin-top:12px;font-size:13px;color:var(--text-secondary);display:none;"></div>
+            <div id="fileInfo" class="file-info" style="display:none;"></div>
         </div>
 
-        <!-- Paste Tab -->
+        <!-- 粘贴标签 -->
         <div id="tab-paste" class="tab-content" style="display:none;">
-            <textarea class="sql-editor" id="sqlEditor" placeholder="Paste your CREATE TABLE SQL here...
+            <textarea class="sql-editor" id="sqlEditor" placeholder="在此粘贴 CREATE TABLE 语句...
 
-Example:
+示例：
 CREATE TABLE `user` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'User ID',
-  `username` varchar(50) NOT NULL COMMENT 'Username',
-  `email` varchar(100) DEFAULT NULL COMMENT 'Email',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Create Time',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
+  `is_del` tinyint NOT NULL DEFAULT 0 COMMENT '删除标记(0:正常 1:已删除)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User Table';"></textarea>
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';"></textarea>
         </div>
 
-        <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary" id="btnParse" onclick="parseSql()">
-                Parse SQL
-            </button>
-            <button class="btn btn-outline" onclick="clearAll()">Clear</button>
+        <!-- 操作按钮 -->
+        <div style="display:flex;gap:12px;">
+            <button class="btn btn--filled" id="btnParse" onclick="parseSql()">🔍 解析 SQL</button>
+            <button class="btn btn--tonal" onclick="clearAll()">🗑 清空</button>
         </div>
     </div>
 
-    <!-- Right Panel: Config & Preview -->
-    <div class="panel panel-right">
-        <!-- Configuration -->
-        <div>
-            <div class="panel-title"><span class="dot"></span>Generation Config</div>
-            <div class="form-group">
-                <label>Author</label>
-                <input class="form-input" id="author" value="sue" placeholder="Author name">
+    <!-- ========== 右侧：配置 & 预览 ========== -->
+    <div class="panel-right">
+        <!-- 生成配置 -->
+        <div class="card">
+            <div class="section-title">
+                <span class="section-title__icon"></span>生成配置
             </div>
-            <div class="form-group">
-                <label>Package Name</label>
-                <input class="form-input" id="packageName" value="com.example" placeholder="e.g. com.example.demo">
+
+            <div class="text-field">
+                <label class="text-field__label">作者</label>
+                <input class="text-field__input" id="author" value="sue" placeholder="代码注释中的作者名">
             </div>
-            <div class="form-group">
-                <label>Code Types</label>
-                <div class="checkbox-group" id="codeTypes">
-                    <label class="checkbox-item checked" data-value="entity">Entity</label>
-                    <label class="checkbox-item checked" data-value="mapper">Mapper</label>
-                    <label class="checkbox-item checked" data-value="xml">XML</label>
-                    <label class="checkbox-item checked" data-value="service">Service</label>
-                    <label class="checkbox-item checked" data-value="controller">Controller</label>
-                    <label class="checkbox-item" data-value="vue">Vue</label>
-                    <label class="checkbox-item" data-value="react">React</label>
-                    <label class="checkbox-item" data-value="test">Test</label>
+
+            <div class="text-field">
+                <label class="text-field__label">包名</label>
+                <input class="text-field__input" id="packageName" value="com.example" placeholder="如 com.example.demo">
+                <span class="text-field__supporting">Java 包路径，影响生成的 import 和 package 声明</span>
+            </div>
+
+            <div class="text-field">
+                <label class="text-field__label">代码类型</label>
+                <div class="chip-group" id="codeTypes">
+                    <label class="chip chip--selected" data-value="entity">Entity</label>
+                    <label class="chip chip--selected" data-value="mapper">Mapper</label>
+                    <label class="chip chip--selected" data-value="xml">XML</label>
+                    <label class="chip chip--selected" data-value="service">Service</label>
+                    <label class="chip chip--selected" data-value="controller">Controller</label>
+                    <label class="chip" data-value="vue">Vue</label>
+                    <label class="chip" data-value="react">React</label>
+                    <label class="chip" data-value="test">Test</label>
                 </div>
             </div>
-            <button class="btn btn-success" id="btnGenerate" onclick="generateCode()" disabled style="width:100%;justify-content:center;">
-                Generate & Download ZIP
+
+            <button class="btn btn--tertiary btn--full" id="btnGenerate" onclick="generateCode()" disabled>
+                📦 生成并下载 ZIP
             </button>
         </div>
 
-        <!-- Table Preview -->
-        <div>
-            <div class="panel-title"><span class="dot"></span>Parsed Tables <span id="tableCount" style="font-size:12px;color:var(--text-secondary);font-weight:400;"></span></div>
+        <!-- 解析结果 -->
+        <div class="card">
+            <div class="section-title">
+                <span class="section-title__icon"></span>解析结果
+                <span class="section-title__badge" id="tableCount"></span>
+            </div>
             <div class="table-preview">
-                <div class="table-preview-body" id="tablePreview">
-                    <div class="empty-state">Parse SQL to see table structure</div>
+                <div class="table-preview__body" id="tablePreview">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">📋</div>
+                        <div>解析 SQL 后在此展示表结构</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Template Manager -->
+        <!-- 模板管理 -->
         <div class="template-manager">
-            <div class="template-manager-header" onclick="toggleTemplateManager()">
-                <span>Template Manager</span>
-                <span id="tmToggle" style="font-size:12px;">&#9654;</span>
+            <div class="template-manager__header" onclick="toggleTemplateManager()">
+                <span>📁 模板管理</span>
+                <span class="template-manager__arrow" id="tmToggle">▶</span>
             </div>
-            <div class="template-manager-body" id="tmBody">
+            <div class="template-manager__body" id="tmBody">
                 <div class="template-list" id="templateList">
-                    <div class="empty-state">Loading templates...</div>
+                    <div class="empty-state">加载中…</div>
                 </div>
                 <div class="template-editor" id="templateEditor" style="display:none;">
-                    <textarea id="templateContent" placeholder="Template content..."></textarea>
-                    <div class="template-editor-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveTemplate()">Save</button>
-                        <button class="btn btn-outline btn-sm" onclick="validateTemplate()">Validate</button>
-                        <button class="btn btn-outline btn-sm" onclick="restoreTemplates()">Restore Defaults</button>
+                    <textarea id="templateContent" placeholder="模板内容…"></textarea>
+                    <div class="template-editor__actions">
+                        <button class="btn btn--filled btn--sm" onclick="saveTemplate()">💾 保存</button>
+                        <button class="btn btn--tonal btn--sm" onclick="validateTemplate()">✅ 校验语法</button>
+                        <button class="btn btn--outlined btn--sm" onclick="restoreTemplates()">↺ 还原默认</button>
                     </div>
                 </div>
             </div>
@@ -593,7 +822,8 @@ CREATE TABLE `user` (
     </div>
 </div>
 
-<div class="toast-container" id="toastContainer"></div>
+<!-- ===== Snackbar ===== -->
+<div class="snackbar-container" id="snackbarContainer"></div>
 
 <script>
 // ===== State =====
@@ -633,7 +863,7 @@ fileInput.addEventListener('change', () => {
 
 function handleFile(file) {
     if (!file.name.endsWith('.sql') && !file.name.endsWith('.txt')) {
-        showToast('Please upload a .sql or .txt file', 'error');
+        showSnackbar('请上传 .sql 或 .txt 文件', 'error');
         return;
     }
     const reader = new FileReader();
@@ -641,17 +871,17 @@ function handleFile(file) {
         parsedSql = e.target.result;
         document.getElementById('sqlEditor').value = parsedSql;
         fileInfo.style.display = 'block';
-        fileInfo.innerHTML = `File loaded: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
-        showToast('File loaded: ' + file.name, 'success');
+        fileInfo.innerHTML = `📎 已加载：<strong>${escapeHtml(file.name)}</strong>（${(file.size / 1024).toFixed(1)} KB）`;
+        showSnackbar('文件加载成功', 'success');
         parseSql();
     };
     reader.readAsText(file);
 }
 
-// ===== Checkbox Group =====
-document.querySelectorAll('.checkbox-item').forEach(item => {
-    item.addEventListener('click', () => {
-        item.classList.toggle('checked');
+// ===== Chip Group =====
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        chip.classList.toggle('chip--selected');
     });
 });
 
@@ -660,7 +890,8 @@ function toggleTemplateManager() {
     const body = document.getElementById('tmBody');
     const toggle = document.getElementById('tmToggle');
     const isOpen = body.classList.toggle('open');
-    toggle.innerHTML = isOpen ? '&#9660;' : '&#9654;';
+    toggle.classList.toggle('open', isOpen);
+    toggle.textContent = isOpen ? '▼' : '▶';
     if (isOpen) loadTemplateList();
 }
 
@@ -671,18 +902,18 @@ async function loadTemplateList() {
         const list = document.getElementById('templateList');
         if (data.success && data.data) {
             list.innerHTML = data.data.map(name =>
-                `<div class="template-list-item" onclick="selectTemplate('${name}')">${name}</div>`
+                `<div class="template-list__item" onclick="selectTemplate('${escapeHtml(name)}', this)">${escapeHtml(name)}</div>`
             ).join('');
         }
     } catch (e) {
-        list.innerHTML = '<div class="empty-state">Failed to load templates</div>';
+        document.getElementById('templateList').innerHTML = '<div class="empty-state">加载失败</div>';
     }
 }
 
-async function selectTemplate(name) {
+async function selectTemplate(name, el) {
     currentTemplate = name;
-    document.querySelectorAll('.template-list-item').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelectorAll('.template-list__item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
 
     try {
         const res = await fetch(`/api/gen/template?name=${encodeURIComponent(name)}`);
@@ -692,12 +923,12 @@ async function selectTemplate(name) {
             document.getElementById('templateContent').value = data.data.content;
         }
     } catch (e) {
-        showToast('Failed to load template', 'error');
+        showSnackbar('加载模板失败', 'error');
     }
 }
 
 async function saveTemplate() {
-    if (!currentTemplate) return showToast('Select a template first', 'error');
+    if (!currentTemplate) return showSnackbar('请先选择一个模板', 'error');
     const content = document.getElementById('templateContent').value;
     try {
         const res = await fetch('/api/gen/template', {
@@ -706,14 +937,14 @@ async function saveTemplate() {
             body: JSON.stringify({ templateName: currentTemplate, content })
         });
         const data = await res.json();
-        showToast(data.message || 'Saved', data.success ? 'success' : 'error');
+        showSnackbar(data.message || '已保存', data.success ? 'success' : 'error');
     } catch (e) {
-        showToast('Save failed', 'error');
+        showSnackbar('保存失败', 'error');
     }
 }
 
 async function validateTemplate() {
-    if (!currentTemplate) return showToast('Select a template first', 'error');
+    if (!currentTemplate) return showSnackbar('请先选择一个模板', 'error');
     const content = document.getElementById('templateContent').value;
     try {
         const res = await fetch('/api/gen/template/validate', {
@@ -722,21 +953,21 @@ async function validateTemplate() {
             body: JSON.stringify({ templateName: currentTemplate, content })
         });
         const data = await res.json();
-        showToast(data.message, data.success ? 'success' : 'error');
+        showSnackbar(data.message, data.success ? 'success' : 'error');
     } catch (e) {
-        showToast('Validation failed', 'error');
+        showSnackbar('校验失败', 'error');
     }
 }
 
 function restoreTemplates() {
-    if (!confirm('Backup and delete all custom templates? A ZIP backup will be downloaded.')) return;
+    if (!confirm('将备份并删除所有自定义模板，确认还原为默认模板？\n备份文件将自动下载为 ZIP。')) return;
     const a = document.createElement('a');
     a.href = '/api/gen/templates/restore';
     a.download = '';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    showToast('Restored default templates', 'success');
+    showSnackbar('已还原为默认模板', 'success');
 }
 
 // ===== Parse SQL =====
@@ -744,7 +975,7 @@ async function parseSql() {
     const sql = document.getElementById('sqlEditor').value.trim() || parsedSql;
     if (!sql) {
         document.getElementById('sqlEditor').value && (parsedSql = document.getElementById('sqlEditor').value);
-        if (!parsedSql) return showToast('Please upload a SQL file or paste SQL', 'error');
+        if (!parsedSql) return showSnackbar('请上传 SQL 文件或粘贴 SQL 语句', 'error');
     }
     parsedSql = sql;
     document.getElementById('sqlEditor').value = sql;
@@ -759,14 +990,14 @@ async function parseSql() {
         if (data.success) {
             parsedTables = data.data;
             renderTablePreview(parsedTables);
-            document.getElementById('tableCount').textContent = `(${parsedTables.length} table(s))`;
+            document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
             document.getElementById('btnGenerate').disabled = false;
-            showToast(data.message, 'success');
+            showSnackbar(data.message || '解析成功', 'success');
         } else {
-            showToast(data.message, 'error');
+            showSnackbar(data.message || '解析失败', 'error');
         }
     } catch (e) {
-        showToast('Parse failed: ' + e.message, 'error');
+        showSnackbar('解析出错：' + e.message, 'error');
     }
 }
 
@@ -774,25 +1005,25 @@ async function parseSql() {
 function renderTablePreview(tables) {
     const container = document.getElementById('tablePreview');
     if (!tables || tables.length === 0) {
-        container.innerHTML = '<div class="empty-state">No tables parsed</div>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📋</div><div>未解析到表结构</div></div>';
         return;
     }
-    container.innerHTML = tables.map((t, i) => `
+    container.innerHTML = tables.map(t => `
         <div class="table-item">
-            <div class="table-item-header" onclick="toggleTableColumns(this)">
+            <div class="table-item__header" onclick="toggleTableColumns(this)">
                 <span>
-                    <span class="table-name">${escapeHtml(t.tableName)}</span>
-                    ${t.tableComment ? `<span class="table-comment"> &mdash; ${escapeHtml(t.tableComment)}</span>` : ''}
+                    <span class="table-item__name">${escapeHtml(t.tableName)}</span>
+                    ${t.tableComment ? `<span class="table-item__comment">— ${escapeHtml(t.tableComment)}</span>` : ''}
                 </span>
-                <span style="font-size:12px;color:var(--text-secondary);">${t.columns ? t.columns.length : 0} columns &#9660;</span>
+                <span class="table-item__arrow">▼</span>
             </div>
             <div class="table-columns">
                 ${(t.columns || []).map(c => `
                     <div class="column-row">
-                        <span class="col-name">${escapeHtml(c.columnName)}</span>
-                        <span class="col-type">${escapeHtml(c.dataType)}</span>
-                        <span class="col-java">${escapeHtml(c.attrType)}</span>
-                        <span class="col-comment">${escapeHtml(c.columnComment || '')}</span>
+                        <span class="column-row__name">${escapeHtml(c.columnName)}</span>
+                        <span class="column-row__type">${escapeHtml(c.dataType)}</span>
+                        <span class="column-row__java">→ ${escapeHtml(c.attrType)}</span>
+                        <span class="column-row__comment">${escapeHtml(c.columnComment || '')}</span>
                     </div>
                 `).join('')}
             </div>
@@ -802,24 +1033,27 @@ function renderTablePreview(tables) {
 
 function toggleTableColumns(header) {
     const columns = header.nextElementSibling;
+    const arrow = header.querySelector('.table-item__arrow');
     columns.classList.toggle('open');
+    arrow.classList.toggle('open');
 }
 
 // ===== Generate Code =====
 async function generateCode() {
-    if (!parsedSql) return showToast('No SQL to generate from', 'error');
+    if (!parsedSql) return showSnackbar('没有可供生成 SQL，请先解析', 'error');
 
     const author = document.getElementById('author').value || 'sue';
     const packageName = document.getElementById('packageName').value || 'com.example';
 
     const codeTypes = [];
-    document.querySelectorAll('#codeTypes .checkbox-item.checked').forEach(el => {
+    document.querySelectorAll('#codeTypes .chip--selected').forEach(el => {
         codeTypes.push(el.dataset.value);
     });
 
     const btn = document.getElementById('btnGenerate');
+    const originalHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Generating...';
+    btn.innerHTML = '<span class="spinner"></span> 正在生成…';
 
     try {
         const res = await fetch('/api/gen/generate', {
@@ -830,7 +1064,7 @@ async function generateCode() {
 
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(err.message || 'Generation failed');
+            throw new Error(err.message || '生成失败');
         }
 
         const blob = await res.blob();
@@ -843,12 +1077,12 @@ async function generateCode() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        showToast('Code generated successfully!', 'success');
+        showSnackbar('代码生成成功，ZIP 下载中', 'success');
     } catch (e) {
-        showToast('Generation failed: ' + e.message, 'error');
+        showSnackbar('生成失败：' + e.message, 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Generate & Download ZIP';
+        btn.innerHTML = originalHtml;
     }
 }
 
@@ -859,23 +1093,24 @@ function clearAll() {
     document.getElementById('sqlEditor').value = '';
     document.getElementById('fileInput').value = '';
     document.getElementById('fileInfo').style.display = 'none';
-    document.getElementById('tablePreview').innerHTML = '<div class="empty-state">Parse SQL to see table structure</div>';
+    document.getElementById('tablePreview').innerHTML = '<div class="empty-state"><div class="empty-state__icon">📋</div><div>解析 SQL 后在此展示表结构</div></div>';
     document.getElementById('tableCount').textContent = '';
     document.getElementById('btnGenerate').disabled = true;
+    showSnackbar('已清空', 'info');
 }
 
-// ===== Toast =====
-function showToast(message, type) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
+// ===== Snackbar (MD3) =====
+function showSnackbar(message, type) {
+    const container = document.getElementById('snackbarContainer');
+    const bar = document.createElement('div');
+    bar.className = `snackbar snackbar--${type || 'info'}`;
+    bar.innerHTML = `<span>${escapeHtml(message)}</span><button class="snackbar__action" onclick="this.parentElement.remove()">关闭</button>`;
+    container.appendChild(bar);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        bar.style.opacity = '0';
+        bar.style.transition = 'opacity 0.3s';
+        setTimeout(() => bar.remove(), 300);
+    }, 3600);
 }
 
 // ===== Utils =====
@@ -884,7 +1119,7 @@ function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ===== Keyboard shortcut: Ctrl+Enter to parse =====
+// ===== Keyboard: Ctrl+Enter 解析 =====
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();

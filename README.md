@@ -1,6 +1,7 @@
-# Code Generator — 基于 SQL 文件的代码生成器
+# Code Generator — Admin 后台管理代码生成器
 
-一个自包含的 Web 应用，上传 SQL 建表语句即可自动生成 Java CRUD 全套代码。
+一个自包含的 Web 应用，上传 SQL 建表语句即可自动生成 Admin 后台 CRUD 全套代码。
+面向 **管理系统、运营后台、内部工具** 等 B 端场景，不支持面向 C 端用户的业务代码生成。
 
 ![演示截图](示意图.png)
 
@@ -348,6 +349,90 @@ SQL 类型到 Java 类型的默认映射：
 
 ---
 
+## 表设计规范
+
+生成器为 **Admin 管理后台** 场景设计，模板对表结构有一组约定字段。建表时需包含以下系统列，否则生成的 XML 中硬编码的字段引用会报错。
+
+### 必需字段
+
+| 字段 | 推荐类型 | 默认值 | 说明 |
+|------|----------|--------|------|
+| `id` | `bigint` | AUTO_INCREMENT | 主键，自增 |
+| `is_del` | `tinyint` | `0` | 软删除标记：0=正常，1=已删除 |
+| `create_time` | `datetime` | CURRENT_TIMESTAMP | 创建时间，由数据库自动填充 |
+| `create_user_id` | `bigint` | — | 创建人 ID，由 `FillUserUtil` 在插入时自动填充 |
+| `create_user_name` | `varchar(50)` | — | 创建人名称，由 `FillUserUtil` 在插入时自动填充 |
+| `update_time` | `datetime` | CURRENT_TIMESTAMP ON UPDATE | 更新时间，`update` 时设置为 `now(3)`，同时作为乐观锁版本号 |
+| `update_user_id` | `bigint` | — | 更新人 ID，由 `FillUserUtil` 在更新时自动填充 |
+| `update_user_name` | `varchar(50)` | — | 更新人名称，由 `FillUserUtil` 在更新时自动填充 |
+
+### 标准建表 SQL 示例
+
+```sql
+CREATE TABLE `user` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
+  `is_del` tinyint NOT NULL DEFAULT 0 COMMENT '删除标记(0:正常 1:已删除)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_user_id` bigint DEFAULT NULL COMMENT '创建人ID',
+  `create_user_name` varchar(50) DEFAULT NULL COMMENT '创建人名称',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `update_user_id` bigint DEFAULT NULL COMMENT '更新人ID',
+  `update_user_name` varchar(50) DEFAULT NULL COMMENT '更新人名称',
+  PRIMARY KEY (`id`),
+  KEY `idx_is_del` (`is_del`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+```
+
+### 字段行为说明
+
+**审计字段（不在 Entity 中生成）**
+
+`id`、`is_del`、`create_time`、`create_user_id`、`create_user_name`、`update_user_id`、`update_user_name` 这几个字段被 Entity 模板自动过滤，不会出现在生成的 `XxxEntity.java` 中。它们的值由框架层统一管理：
+
+- `create_time` — 数据库 `DEFAULT CURRENT_TIMESTAMP` 自动填充
+- `create_user_id` / `create_user_name` — `FillUserUtil.fillInsertUserInfo()` 在 Service.insert() 中自动注入
+- `update_user_id` / `update_user_name` — `FillUserUtil.fillUpdateUserInfo()` 在 Service.update() / deleteByIds() 中自动注入
+- `is_del` — 所有查询自动带 `AND is_del = 0`，删除操作走逻辑删除（`SET is_del = 1`）
+
+**`update_time` 特殊处理**
+
+`update_time` 是唯一一个在 Entity 中保留的系统字段。它承担双重职责：
+
+1. **自动更新时间戳** — `update` / `delete` 语句硬编码 `update_time = now(3)`
+2. **乐观锁版本号** — `update` 语句的 WHERE 子句包含 `AND update_time = #{updateTime}`，防止并发覆盖
+
+> 如果你不需要乐观锁且 Entity 中有 `updateTime` 让你困扰，可以自行在 Entity.java.vm 中将 `updateTime` 加回过滤列表。
+
+### 软删除机制
+
+整个模板统一使用 **逻辑删除** 策略：
+
+| 操作 | 软删除行为 |
+|------|-----------|
+| `findById` / `findByIds` | WHERE 带 `AND is_del = 0` |
+| `searchByCondition` / `searchCount` | queryWhere 末尾固定 `AND is_del = 0` |
+| `update` | WHERE 带 `AND is_del = 0`，禁止修改已删除记录 |
+| `deleteByIds` | 不执行 DELETE，改为 `UPDATE SET is_del = 1`，且带 `WHERE is_del = 0` 防止重复删除 |
+
+### 乐观锁机制
+
+`update` 语句利用 `update_time` 字段实现乐观锁，防止并发更新丢失：
+
+```sql
+-- 生成的 update 语句
+UPDATE user SET username = #{username}, update_time = now(3)
+WHERE id = #{id} AND is_del = 0 AND update_time = #{updateTime}
+```
+
+- 实体从数据库加载时带有当前的 `updateTime`
+- 提交更新时，WHERE 中校验 `update_time` 是否未被他人修改
+- 若 `update_time` 已变化（被其他事务修改），WHERE 不命中，返回 affected rows = 0
+- Service 层检测到 0 行更新后应抛出并发修改异常（需自行在 Service.update() 中添加该检查）
+
+---
+
 ## 生成的增删改查方法
 
 以下列出勾选 Service / Controller / Mapper / XML 后，生成代码中实际包含的全部方法。
@@ -395,18 +480,20 @@ SQL 类型到 Java 类型的默认映射：
 | `sql` — `selectXxxColumn` | 查询列清单（逗号分隔），供各 SELECT 复用 |
 | `sql` — `queryWhere` | 动态 WHERE 条件：遍历所有字段判空生成 `AND col = #{val}`，末尾固定 `AND is_del = 0` |
 | `sql` — `paginationSql` | 分页片段：`LIMIT #{pageBegin}, #{pageSize}`，仅当 `pageSize > 0` 时追加 |
-| `select` — `findById` | `SELECT ... FROM table WHERE id = #{id}` |
+| `select` — `findById` | `SELECT ... FROM table WHERE id = #{id} AND is_del = 0` |
 | `select` — `searchByCondition` | `SELECT ... FROM table` + queryWhere + paginationSql |
 | `select` — `searchCount` | `SELECT COUNT(*) FROM table` + queryWhere |
-| `select` — `findByIds` | `SELECT ... FROM table WHERE id IN (...)` |
+| `select` — `findByIds` | `SELECT ... FROM table WHERE is_del = 0 AND id IN (...)` |
 | `insert` | `INSERT INTO table (...) VALUES (...)` — 动态 `<if>` 判空，自增主键自动跳过 |
-| `update` | `UPDATE table SET col=#{val}, ...` — 动态 `<if>` 判空排除主键列，自动带 `update_time=now(3)` |
-| `delete` — `deleteByIds` | `UPDATE table SET is_del=1, update_time=now(3), ... WHERE id IN (...)` — 逻辑删除 |
+| `update` | `UPDATE table SET col=#{val}, update_time=now(3) WHERE id = #{id} AND is_del = 0 AND update_time = #{updateTime}` — 含乐观锁 |
+| `delete` — `deleteByIds` | `UPDATE table SET is_del=1, update_time=now(3), ... WHERE is_del = 0 AND id IN (...)` — 逻辑删除，防止重复删除 |
 
 ### 关键行为说明
 
 - **分页机制**：分页参数由 `ConditionEntity` 父类统一携带（`pageNum`、`pageSize`、`pageBegin`），XML 中通过 `paginationSql` 自动追加 LIMIT。
-- **逻辑删除**：delete 操作不走 `DELETE FROM`，而是 `UPDATE ... SET is_del = 1`，同时自动填充 `update_time` 和 `update_user_id/name`。
+- **逻辑删除**：delete 操作不走 `DELETE FROM`，而是 `UPDATE ... SET is_del = 1`，同时自动填充 `update_time` 和 `update_user_id/name`。WHERE 中带 `is_del = 0` 防止重复删除。
+- **软删除过滤**：所有查询和更新操作均带 `is_del = 0` 条件，防止越权操作已删除数据。`findById`、`findByIds`、`update`、`deleteByIds` 均覆盖。
+- **乐观锁**：`update` 语句的 WHERE 子句包含 `AND update_time = #{updateTime}`。实体从数据库加载时携带当前 `update_time`，提交更新时校验该值未被他人修改。若 0 行更新，需在 Service 层抛并发修改异常。
 - **条件查询**：XML 的 `queryWhere` 遍历所有列生成等值匹配条件，且会在末尾固定拼接 `AND is_del = 0` 过滤已删除数据。
 - **审计字段**：`insert` 时自动填充 `create_time`、`create_user_id` 等字段（依赖 `FillUserUtil`），`update` 时自动设 `update_time=now(3)`。
 
@@ -422,6 +509,7 @@ SQL 类型到 Java 类型的默认映射：
 |------------|------|
 | 业务校验逻辑 | 生成代码只做存在性校验，字段唯一性、状态机流转、业务规则校验需自己加 |
 | 批量新增 | 模板只生成单条 `insert()`，如需一次插入多条需自行添加 `batchInsert()` |
+| 乐观锁异常处理 | XML 已生成 `WHERE ... AND update_time = #{updateTime}`，但 Service.update() 未检查返回行数。需自行添加：`if (rows == 0) throw new OptimisticLockException("数据已被他人修改")` |
 | 缓存注解 | 按需添加 `@Cacheable` / `@CacheEvict`，生成代码不含缓存 |
 | 自定义查询方法 | 比如"根据用户名+状态联合查询"、"查询某时间段内的记录"，需在 Service/Mapper/XML 三处联动添加 |
 | 导出功能 | 如需 Excel/CSV 导出，需自行在 Service 中实现查询+转换逻辑 |
@@ -476,7 +564,7 @@ SQL 类型到 Java 类型的默认映射：
 | 非等值匹配字段 | 生成的全部是等值匹配字段，如需模糊查询需加 `String nameLike`，范围查询需加 `Date createTimeStart` / `Date createTimeEnd` 等 |
 | 排序参数 | 如需前端控制排序字段和方向，加 `orderBy` / `isAsc` 等属性 |
 
-> **总结**：生成器帮你省掉的是每张表都要写的重复 CRUD 样板代码。表越多收益越大。剩下的业务差异部分（权限、校验、复杂查询、缓存、导出）仍需按需手写，但这些代码本该就因业务而异，不适合模板化。
+> **适用边界**：本生成器专为 **Admin 管理后台** 设计，假设每张表都走标准 CRUD + 软删除 + 审计字段模式。你的表越多、越"标准"，收益越大。**不适合的场景**：面向 C 端的高并发接口、复杂业务工作流、非 CRUD 的领域服务、无审计字段的轻量表。这些场景下模板假设不成立，生成的代码反而会成为负担。
 
 ---
 
@@ -489,6 +577,17 @@ SQL 类型到 Java 类型的默认映射：
 **Q: 自定义模板不生效？**
 
 检查 `generator.yml` 中 `gen.ignoreCustomTemplate` 是否为 `false`。默认为 `true`（忽略自定义模板）。
+
+**Q: 能否用于面向 C 端用户的业务？**
+
+不建议。本工具为 Admin 管理后台场景设计，模板内置了大量 B 端假设：
+
+- 每表固定 8 个审计字段（`is_del` / `create_time` / `update_time` / `create_user_id` 等）
+- 所有删除走逻辑删除（`is_del = 1`），不生成物理 DELETE
+- 查询条件仅支持等值匹配（`col = #{val}`），不含 LIKE / BETWEEN / 聚合
+- 无缓存、无读写分离、无事件驱动相关代码
+
+C 端业务的 Schema 设计、查询模式、性能策略与 Admin 后台完全不同，强行套用模板会导致大量返工。C 端场景建议手写或使用 AI 辅助生成。
 
 **Q: 如何修改生成的包名和作者默认值？**
 
