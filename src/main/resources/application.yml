@@ -11,4 +11,4 @@ spring:
 
 logging:
   level:
-    cn.net.susan: DEBUG
+    cn.net.yao: DEBUG
