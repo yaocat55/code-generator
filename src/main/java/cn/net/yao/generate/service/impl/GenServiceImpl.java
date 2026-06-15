@@ -37,11 +37,18 @@ public class GenServiceImpl implements IGenService {
 
     @Override
     public byte[] generatorCodeFromSql(String author, String packageName, String createSql) {
-        return generatorCodeFromSql(author, packageName, createSql, null);
+        return generatorCodeFromSql(author, packageName, createSql, null, null);
     }
 
     @Override
     public byte[] generatorCodeFromSql(String author, String packageName, String createSql, String[] codeTypes) {
+        return generatorCodeFromSql(author, packageName, createSql, codeTypes, null);
+    }
+
+    @Override
+    public byte[] generatorCodeFromSql(String author, String packageName, String createSql,
+                                       String[] codeTypes, String dbType) {
+        String realDbType = (dbType == null || dbType.isEmpty()) ? "mysql" : dbType.toLowerCase();
         List<TableInfo> tables = SqlParser.parseMultipleCreateTables(createSql);
         for (TableInfo table : tables) {
             table.setColumns(GenUtils.transColums(table.getColumns()));
@@ -53,19 +60,41 @@ public class GenServiceImpl implements IGenService {
         VelocityInitializer.initVelocity();
 
         String realPackageName = StringUtil.isEmpty(packageName) ? GenConfig.getPackageName() : packageName;
-        String moduleName = GenUtils.getModuleName(realPackageName);
 
         List<String> templates = GenUtils.getTemplates();
         if (codeTypes != null && codeTypes.length > 0) {
             templates = filterTemplatesByCodeTypes(templates, codeTypes);
         }
+        // 根据数据库类型筛选对应的 XML 模板
+        templates = filterXmlTemplateByDbType(templates, realDbType);
 
         boolean hasTestCode = templates.stream().anyMatch(t -> t.contains("Test.java.vm"));
+
+        // Determine architecture mode for file paths
+        java.util.List<String> ctList = codeTypes != null ? Arrays.asList(codeTypes) : java.util.Collections.emptyList();
+        boolean useDdd = ctList.contains("ddd");
+        boolean useMp = ctList.contains("mp");
+        boolean useJpa = ctList.contains("jpa");
+        String archMode;
+        if (useDdd && useMp) archMode = "ddd-mp";
+        else if (useDdd) archMode = "ddd";
+        else if (useJpa) archMode = "jpa";
+        else if (useMp) archMode = "mp";
+        else archMode = "standard";
+
+        String pkgModuleName = GenUtils.getModuleName(realPackageName);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(outputStream)) {
             for (TableInfo table : tables) {
+                // Per-table moduleName: DDD uses table classname as domain module
+                String tableModuleName = useDdd ? table.getClassname() : pkgModuleName;
+
                 VelocityContext context = GenUtils.getVelocityContext(author, realPackageName, table);
+                if (useDdd) {
+                    context.put("moduleName", tableModuleName);
+                    context.put("prefix", tableModuleName);
+                }
 
                 for (String template : templates) {
                     try (StringWriter sw = new StringWriter()) {
@@ -81,8 +110,8 @@ public class GenServiceImpl implements IGenService {
                             templateContent = getOriginalTemplateContent(template);
                         }
 
-                        String fileName = GenUtils.getFileName(realPackageName, template, table, moduleName,
-                                templateContent);
+                        String fileName = GenUtils.getFileName(realPackageName, template, table, tableModuleName,
+                                templateContent, archMode);
                         if (fileName != null) {
                             zip.putNextEntry(new ZipEntry(fileName));
                             IOUtils.write(renderedContent, zip, CharsetKit.UTF_8);
@@ -94,7 +123,7 @@ public class GenServiceImpl implements IGenService {
                 }
 
                 if (hasTestCode) {
-                    generatePomFile(context, realPackageName, table, moduleName, zip);
+                    generatePomFile(context, realPackageName, table, tableModuleName, zip);
                 }
             }
         } catch (IOException e) {
@@ -106,15 +135,7 @@ public class GenServiceImpl implements IGenService {
 
     @Override
     public List<String> getTemplateList() {
-        List<String> templates = GenUtils.getTemplates();
-        List<String> templateNames = new ArrayList<>();
-        for (String template : templates) {
-            String[] parts = template.split("/");
-            if (parts.length > 0) {
-                templateNames.add(parts[parts.length - 1]);
-            }
-        }
-        return templateNames;
+        return new ArrayList<>(GenUtils.getTemplates());
     }
 
     @Override
@@ -215,11 +236,12 @@ public class GenServiceImpl implements IGenService {
             String customDir = resolveCustomDir(templateDir);
             int backupCount = 0;
 
-            for (String templateName : templateNames) {
-                String customPath = customDir + templateName;
+            for (String templatePath : templateNames) {
+                String customPath = customDir + templatePath;
                 File customFile = new File(customPath);
                 if (customFile.exists() && customFile.isFile()) {
-                    zip.putNextEntry(new ZipEntry(templateName));
+                    String fileName = templatePath.substring(templatePath.lastIndexOf('/') + 1);
+                    zip.putNextEntry(new ZipEntry(fileName));
                     try (FileInputStream fis = new FileInputStream(customFile)) {
                         IOUtils.copy(fis, zip);
                     }
@@ -248,29 +270,112 @@ public class GenServiceImpl implements IGenService {
     private List<String> filterTemplatesByCodeTypes(List<String> templates, String[] codeTypes) {
         List<String> filtered = new ArrayList<>();
         List<String> codeTypeList = Arrays.asList(codeTypes);
+        boolean useMp = codeTypeList.contains("mp");
+        boolean useDdd = codeTypeList.contains("ddd");
+        boolean useJpa = codeTypeList.contains("jpa");
 
         for (String template : templates) {
             boolean include = false;
-            if (template.contains("Entity.java.vm") && codeTypeList.contains("entity")) include = true;
-            else if (template.contains("Mapper.java.vm") && codeTypeList.contains("mapper")) include = true;
-            else if (template.contains("Mapper.xml.vm") && codeTypeList.contains("xml")) include = true;
-            else if (template.contains("Service.java.vm") && codeTypeList.contains("service")) include = true;
-            else if (template.contains("Controller.java.vm") && codeTypeList.contains("controller")) include = true;
-            else if ((template.contains("api.js.vm") || template.contains("index.vue.vm")) && codeTypeList.contains("vue")) include = true;
-            else if ((template.contains("api.ts.vm") || template.contains("react/index.tsx.vm")) && codeTypeList.contains("react")) include = true;
-            else if (template.contains("Test.java.vm") && codeTypeList.contains("test")) include = true;
-            else if (template.contains("ConditionEntity.java.vm") && codeTypeList.contains("entity")) include = true;
+            boolean isDddTpl = template.contains("ddd/");
+            boolean isMpTpl = template.contains("mp/");
+            boolean isDddMpTpl = template.contains("ddd/mp/");
+            boolean isJpaTpl = template.contains("jpa/");
+
+            // Skip all non-relevant architecture templates
+            if (useJpa) {
+                // JPA mode (layered only): only jpa/ templates + vue/react/test
+                if (!isJpaTpl) {
+                    if (!template.contains("vue/") && !template.contains("react/") && !template.contains("Test.java.vm"))
+                        continue;
+                }
+            } else if (useDdd && useMp) {
+                // DDD + MP mode: only ddd/mp/ templates
+                if (!isDddMpTpl) {
+                    // Also allow vue/react/test
+                    if (!template.contains("vue/") && !template.contains("react/") && !template.contains("Test.java.vm"))
+                        continue;
+                }
+            } else if (useDdd) {
+                // DDD + standard MyBatis: ddd/ templates but NOT ddd/mp/
+                if (isDddMpTpl) continue;
+                if (!isDddTpl) {
+                    if (!template.contains("vue/") && !template.contains("react/") && !template.contains("Test.java.vm") && !template.endsWith(".xml.vm"))
+                        continue;
+                }
+            } else if (useMp) {
+                // Layered + MP: mp/ templates only (not ddd/mp/)
+                if (isDddTpl) continue;
+            } else {
+                // Layered + standard: skip all ddd/ and mp/ templates
+                if (isDddTpl || isMpTpl) continue;
+            }
+
+            // Match by code type
+            if (template.contains("Entity.java.vm")) {
+                if (codeTypeList.contains("entity")) include = true;
+            } else if (template.contains("domain/Repository.java.vm") || template.contains("infrastructure/RepositoryImpl.java.vm")) {
+                if (codeTypeList.contains("mapper")) include = true;
+            } else if (template.contains("Mapper.java.vm") && !template.contains("infrastructure/Mapper.java.vm") && !template.contains("mp/Mapper.java.vm") && !template.contains("ddd/")) {
+                if (codeTypeList.contains("mapper")) include = true;
+            } else if (template.contains("mp/Mapper.java.vm") || template.contains("infrastructure/Mapper.java.vm")) {
+                if (codeTypeList.contains("mapper")) include = true;
+            } else if (template.contains("jpa/Repository.java.vm")) {
+                if (codeTypeList.contains("mapper")) include = true;
+            } else if (template.contains("Mapper") && template.endsWith(".xml.vm") && codeTypeList.contains("xml")) {
+                include = true;
+            } else if (template.contains("Service.java.vm") || template.contains("application/Service.java.vm")) {
+                if (codeTypeList.contains("service")) include = true;
+            } else if (template.contains("ServiceImpl.java.vm")) {
+                if (codeTypeList.contains("service")) include = true;
+            } else if (template.contains("Controller.java.vm") || template.contains("interfaces/Controller.java.vm")) {
+                if (codeTypeList.contains("controller")) include = true;
+            } else if ((template.contains("api.js.vm") || template.contains("index.vue.vm")) && codeTypeList.contains("vue")) {
+                include = true;
+            } else if ((template.contains("api.ts.vm") || template.contains("react/index.tsx.vm")) && codeTypeList.contains("react")) {
+                include = true;
+            } else if (template.contains("Test.java.vm") && codeTypeList.contains("test")) {
+                include = true;
+            } else if (template.contains("ConditionEntity.java.vm") && codeTypeList.contains("entity")) {
+                include = true;
+            } else if (template.contains("domain/Condition.java.vm") && codeTypeList.contains("entity")) {
+                include = true;
+            }
 
             if (include) filtered.add(template);
         }
         return filtered;
     }
 
+    /**
+     * 根据数据库类型过滤 XML 模板，只保留匹配的那一个。
+     */
+    private List<String> filterXmlTemplateByDbType(List<String> templates, String dbType) {
+        List<String> result = new ArrayList<>();
+        String expectedXml = "Mapper.xml.vm";       // mysql 默认
+        if ("postgresql".equals(dbType)) {
+            expectedXml = "Mapper-pg.xml.vm";
+        } else if ("sqlserver".equals(dbType)) {
+            expectedXml = "Mapper-mssql.xml.vm";
+        }
+
+        for (String tpl : templates) {
+            if (tpl.contains("Mapper") && tpl.endsWith(".xml.vm")) {
+                // 只保留匹配数据库类型的那一个 XML 模板
+                if (tpl.endsWith(expectedXml)) {
+                    result.add(tpl);
+                }
+                // 其他的都丢弃
+            } else {
+                result.add(tpl);
+            }
+        }
+        return result;
+    }
+
     private String findTemplatePath(String templateName) {
         for (String template : GenUtils.getTemplates()) {
-            if (template.endsWith("/" + templateName) || template.endsWith("\\" + templateName)) {
-                return template;
-            }
+            if (template.equals(templateName)) return template;
+            if (template.endsWith("/" + templateName) || template.endsWith("\\" + templateName)) return template;
         }
         return null;
     }
@@ -299,9 +404,7 @@ public class GenServiceImpl implements IGenService {
     private String getTemplateContentForRender(String templatePath) {
         if (GenConfig.isIgnoreCustomTemplate()) return null;
         try {
-            String[] parts = templatePath.split("/");
-            String templateName = parts[parts.length - 1];
-            String customPath = getCustomTemplatePath(templateName, null);
+            String customPath = getCustomTemplatePath(templatePath, null);
             File customFile = new File(customPath);
             if (customFile.exists()) {
                 return new String(Files.readAllBytes(customFile.toPath()), CharsetKit.UTF_8);

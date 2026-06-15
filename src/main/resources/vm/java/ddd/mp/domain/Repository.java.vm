@@ -1,0 +1,26 @@
+package ${package}.domain.${moduleName};
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
+
+/**
+ * ${tableComment} 仓储接口 (DDD + MyBatis-Plus)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+public interface ${className}Repository {
+
+    ${className} findById(Long id);
+
+    boolean save(${className} ${classname});
+
+    boolean update(${className} ${classname});
+
+    boolean deleteById(Long id);
+
+    List<${className}> findList();
+
+    IPage<${className}> findPage(Page<${className}> page);
+}

@@ -1,0 +1,15 @@
+package ${package}.infrastructure.persistence.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * ${tableComment} MyBatis-Plus Mapper (DDD 基础设施层)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Mapper
+public interface ${className}Mapper extends BaseMapper<${className}> {
+}

@@ -1,0 +1,56 @@
+package ${package}.infrastructure.persistence.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import ${package}.domain.${moduleName}.${className}Repository;
+import ${package}.domain.${moduleName}.${className}Condition;
+import org.springframework.stereotype.Repository;
+import jakarta.annotation.Resource;
+import java.util.List;
+
+/**
+ * ${tableComment} 仓储实现 (DDD)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Repository
+public class ${className}RepositoryImpl implements ${className}Repository {
+
+    @Resource
+    private ${className}Mapper ${classname}Mapper;
+
+    @Override
+    public ${className} findById(Long id) {
+        return ${classname}Mapper.findById(id);
+    }
+
+    @Override
+    public int save(${className} ${classname}) {
+        return ${classname}Mapper.insert(${classname});
+    }
+
+    @Override
+    public int update(${className} ${classname}) {
+        return ${classname}Mapper.update(${classname});
+    }
+
+    @Override
+    public int deleteById(Long id) {
+        return ${classname}Mapper.deleteById(id);
+    }
+
+    @Override
+    public List<${className}> findByIds(List<Long> ids) {
+        return ${classname}Mapper.findByIds(ids);
+    }
+
+    @Override
+    public List<${className}> findByCondition(${className}Condition condition) {
+        return ${classname}Mapper.searchByCondition(condition);
+    }
+
+    @Override
+    public int countByCondition(${className}Condition condition) {
+        return ${classname}Mapper.searchCount(condition);
+    }
+}

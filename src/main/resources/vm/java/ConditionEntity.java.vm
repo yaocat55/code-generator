@@ -14,8 +14,7 @@ import java.math.BigDecimal;
 #break
 #end
 #end
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * ${tableComment}查询条件实体
@@ -23,7 +22,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author ${author}
  * @date ${datetime}
  */
-@ApiModel("${tableComment}查询条件实体")
+@Schema(description = "${tableComment}查询条件实体")
 @Data
 public class ${className}ConditionEntity extends RequestPageEntity {
 
@@ -32,7 +31,7 @@ public class ${className}ConditionEntity extends RequestPageEntity {
 	/**
 	 *  $column.columnComment
      */
-	@ApiModelProperty("$column.columnComment")
+	@Schema(description = "$column.columnComment")
 	private $column.attrType $column.attrname;
 #end
 }

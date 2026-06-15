@@ -1,0 +1,65 @@
+package ${package}.service.impl;
+
+import ${package}.entity.${className}Entity;
+import ${package}.repository.${className}Repository;
+import ${package}.service.${className}Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * ${tableComment} 服务实现 (JPA)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Service
+public class ${className}ServiceImpl implements ${className}Service {
+
+    @Autowired
+    private ${className}Repository ${classname}Repository;
+
+    @Override
+    public Optional<${className}Entity> findById(Long id) {
+        return ${classname}Repository.findById(id);
+    }
+
+    @Override
+    public Page<${className}Entity> findByPage(Pageable pageable) {
+        return ${classname}Repository.findAll(pageable);
+    }
+
+    @Override
+    public List<${className}Entity> findList() {
+        return ${classname}Repository.findAll();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ${className}Entity create(${className}Entity entity) {
+        return ${classname}Repository.save(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ${className}Entity modify(${className}Entity entity) {
+        return ${classname}Repository.save(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void remove(Long id) {
+        ${classname}Repository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeBatch(List<Long> ids) {
+        ${classname}Repository.deleteAllById(ids);
+    }
+}

@@ -1,0 +1,63 @@
+package ${package}.application.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import ${package}.domain.${moduleName}.${className}Repository;
+import ${package}.domain.${moduleName}.${className}Condition;
+import ${package}.infrastructure.util.AssertUtil;
+import ${package}.infrastructure.util.IdUtil;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.Resource;
+import java.util.List;
+
+/**
+ * ${tableComment} 应用服务 (DDD)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Service
+public class ${className}AppService {
+
+    @Resource
+    private ${className}Repository ${classname}Repository;
+
+    public ${className} findById(Long id) {
+        return ${classname}Repository.findById(id);
+    }
+
+    public List<${className}> findByCondition(${className}Condition condition) {
+        return ${classname}Repository.findByCondition(condition);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void create(${className} ${classname}) {
+        ${classname}.setId(IdUtil.nextId());
+        ${classname}Repository.save(${classname});
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void modify(${className} ${classname}) {
+        ${className} existing = ${classname}Repository.findById(${classname}.getId());
+        AssertUtil.notNull(existing, "${tableComment}不存在");
+        ${classname}Repository.update(${classname});
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void remove(Long id) {
+        ${className} ${classname} = ${classname}Repository.findById(id);
+        AssertUtil.notNull(${classname}, "${tableComment}不存在");
+        ${classname}.markDeleted();
+        ${classname}Repository.update(${classname});
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void removeBatch(List<Long> ids) {
+        List<${className}> list = ${classname}Repository.findByIds(ids);
+        AssertUtil.notEmpty(list, "${tableComment}不存在");
+        for (${className} item : list) {
+            item.markDeleted();
+            ${classname}Repository.update(item);
+        }
+    }
+}

@@ -1,0 +1,36 @@
+package ${package}.domain.${moduleName};
+
+import lombok.Data;
+import java.time.LocalDateTime;
+
+/**
+ * ${tableComment} 聚合根 (DDD)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Data
+public class ${className} {
+
+    private Long id;
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+    private $column.attrType $column.attrname;
+#end
+#end
+    private Long createUserId;
+    private String createUserName;
+    private LocalDateTime createTime;
+    private Long updateUserId;
+    private String updateUserName;
+    private LocalDateTime updateTime;
+    private Integer isDel;
+
+    public void markDeleted() {
+        this.isDel = 1;
+    }
+
+    public void restore() {
+        this.isDel = 0;
+    }
+}

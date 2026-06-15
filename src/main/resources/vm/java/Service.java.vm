@@ -17,6 +17,7 @@ import ${package}.entity.${slaveTable.className}ConditionEntity;
 #end
 import ${package}.util.AssertUtil;
 import ${package}.util.FillUserUtil;
+import ${package}.util.IdUtil;
 import ${package}.mapper.BaseMapper;
 /**
  * ${tableComment} 服务层
@@ -81,6 +82,7 @@ public class ${className}Service extends BaseService< ${className}Entity,  ${cla
      */
 	@Transactional(rollbackFor = Exception.class)
 	public int insert(${className}Entity ${classname}Entity) {
+	    ${classname}Entity.setId(IdUtil.nextId());
 	    int rows = ${classname}Mapper.insert(${classname}Entity);
 #if($isMasterSlave)
 #foreach($slaveTable in $slaveTables)

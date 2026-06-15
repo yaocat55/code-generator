@@ -1,0 +1,61 @@
+package ${package}.application.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import ${package}.domain.${moduleName}.${className}Repository;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.Resource;
+import java.util.List;
+
+/**
+ * ${tableComment} 应用服务 (DDD + MyBatis-Plus)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Service
+public class ${className}AppService {
+
+    @Resource
+    private ${className}Repository ${classname}Repository;
+
+    public ${className} findById(Long id) {
+        return ${classname}Repository.findById(id);
+    }
+
+    public List<${className}> findList() {
+        return ${classname}Repository.findList();
+    }
+
+    public IPage<${className}> findPage(int pageNum, int pageSize) {
+        return ${classname}Repository.findPage(new Page<>(pageNum, pageSize));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void create(${className} ${classname}) {
+        ${classname}Repository.save(${classname});
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void modify(${className} ${classname}) {
+        ${classname}Repository.update(${classname});
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void remove(Long id) {
+        ${className} ${classname} = ${classname}Repository.findById(id);
+        if (${classname} != null) {
+            ${classname}.markDeleted();
+            ${classname}Repository.update(${classname});
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void removeBatch(List<Long> ids) {
+        for (Long id : ids) {
+            remove(id);
+        }
+    }
+}

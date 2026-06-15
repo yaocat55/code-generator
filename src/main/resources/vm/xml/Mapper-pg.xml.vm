@@ -13,7 +13,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="paginationSql">
         <if test="pageSize > 0">
-           LIMIT #{pageBegin} , #{pageSize}
+           LIMIT #{pageSize} OFFSET #{pageBegin}
         </if>
     </sql>
 
@@ -75,14 +75,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
                 #end
             #end
-            update_time=now(3)
+            update_time=CURRENT_TIMESTAMP
         </trim>
         WHERE id = #{id} AND is_del = 0 AND update_time = #{updateTime}
     </update>
 
     <delete id="deleteByIds">
         UPDATE ${tableName}
-        SET is_del = 1,update_time=now(3),update_user_id=#{entity.updateUserId},update_user_name=#{entity.updateUserName}
+        SET is_del = 1,update_time=CURRENT_TIMESTAMP,update_user_id=#{entity.updateUserId},update_user_name=#{entity.updateUserName}
         WHERE is_del = 0 AND id IN
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}

@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="fragments/head :: head('Code Generator — Admin 后台管理代码生成器')"></th:block>
+</head>
+<body>
+    <th:block th:replace="fragments/header :: header"></th:block>
+<!-- ===== Main ===== -->
+<div class="main-container">
+    <!-- ========== 左侧：SQL 输入 ========== -->
+    <div class="panel-left">
+        <!-- 输入模式切换 -->
+        <div class="chip-group" id="inputModeGroup">
+            <label class="chip chip--selected" data-mode="upload">📂 上传 SQL</label>
+            <label class="chip" data-mode="paste">📝 粘贴 SQL</label>
+            <label class="chip" data-mode="ai">🤖 AI 分析</label>
+        </div>
+
+        <!-- 上传模式 -->
+        <div id="mode-upload" class="mode-content">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-zone__icon">📄</div>
+                <div class="upload-zone__text">拖拽 <strong>.sql</strong> 文件到此处</div>
+                <div class="upload-zone__hint">或点击选择文件 — 支持 CREATE TABLE 语句</div>
+                <input type="file" id="fileInput" accept=".sql,.txt">
+            </div>
+            <div id="fileInfo" class="file-info" style="display:none;"></div>
+        </div>
+
+        <!-- 粘贴模式 -->
+        <div id="mode-paste" class="mode-content" style="display:none;">
+            <textarea class="sql-editor" id="sqlEditor" placeholder="在此粘贴 CREATE TABLE 语句...
+
+示例：
+CREATE TABLE `user` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
+  `is_del` tinyint NOT NULL DEFAULT 0 COMMENT '删除标记(0:正常 1:已删除)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';"></textarea>
+        </div>
+
+        <!-- AI 模式 -->
+        <div id="mode-ai" class="mode-content" style="display:none;">
+            <div class="ai-input-row">
+                <div class="ai-input-row__label">📎 上传需求文档（.docx / .md / .txt）</div>
+                <div class="ai-file-row">
+                    <button class="btn btn--outlined btn--sm" id="btnAiPickFile">选择文件</button>
+                    <span id="aiFileLabel" class="ai-file-label">未选择文件</span>
+                    <input type="file" id="aiFileInput" accept=".docx,.md,.txt" style="display:none;">
+                </div>
+            </div>
+            <div class="ai-separator"><span>或直接输入需求</span></div>
+            <textarea class="sql-editor" id="aiTextInput" placeholder="描述你的需求，例如：
+
+用户管理系统，包含用户、角色、权限三张表
+订单系统，需要订单主表+明细表，关联用户" style="min-height:150px;"></textarea>
+            <div id="aiStatus" class="ai-status-area"></div>
+        </div>
+
+        <!-- 操作栏 -->
+        <div class="action-bar">
+            <div id="actions-normal">
+                <button class="btn btn--filled" id="btnParse" onclick="parseSql()">🔍 解析 SQL</button>
+                <button class="btn btn--tonal" onclick="clearAll()">🗑 清空</button>
+            </div>
+            <div id="actions-ai" style="display:none;">
+                <button class="btn btn--filled" id="btnAiAnalyze" onclick="aiAnalyze()" disabled>🤖 AI 分析生成 SQL</button>
+                <button class="btn btn--tonal" id="btnAiParse" onclick="aiParseAndPreview()" disabled>🔍 解析预览</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 右侧：配置 & 预览 ========== -->
+    <div class="panel-right">
+        <!-- 生成配置 -->
+        <div class="card" id="configCard">
+            <div class="card__header card__header--clickable card__header--open" onclick="toggleConfigCard()">
+                <span>⚙️ 生成配置</span>
+                <span class="card__arrow open" id="configToggle">▼</span>
+            </div>
+            <div class="card__body open" id="configBody">
+            <div class="text-field">
+                <label class="text-field__label">作者</label>
+                <input class="text-field__input" id="author" th:value="${defaultAuthor}" value="yourname" placeholder="代码注释中的作者名">
+            </div>
+
+            <div class="text-field">
+                <label class="text-field__label">
+                    包名
+                    <span class="help-icon" data-help="Java 包路径，决定生成代码的目录结构和 package 声明。&#10;&#10;例如 com.example.demo 会生成：&#10;main/java/com/example/demo/entity/XxxEntity.java&#10;main/java/com/example/demo/mapper/XxxMapper.java&#10;&#10;包名最后一段自动提取为模块名，影响 MyBatis XML 的 namespace 和文件路径。">?</span>
+                </label>
+                <input class="text-field__input" id="packageName" th:value="${defaultPackage}" value="com.example" placeholder="如 com.example.demo">
+            </div>
+
+            <div class="text-field">
+                <label class="text-field__label">
+                    数据库类型
+                    <span class="help-icon" data-help="选择目标数据库，影响两个维度：&#10;&#10;1. AI 生成 SQL 的方言&#10;MySQL → backtick 引用、ENGINE=InnoDB&#10;PostgreSQL → NOW()、BOOLEAN、TIMESTAMP&#10;SQL Server → GETDATE()、NVARCHAR、DATETIME2&#10;&#10;2. XML 模板选择&#10;MySQL → Mapper.xml&#10;PostgreSQL → Mapper-pg.xml&#10;SQL Server → Mapper-mssql.xml&#10;&#10;上传 SQL 文件或粘贴 DDL 时，系统会自动识别方言并高亮对应选项。">?</span>
+                </label>
+                <div class="chip-group" id="dbType">
+                    <label class="chip chip--selected" data-value="mysql">MySQL</label>
+                    <label class="chip" data-value="postgresql">PostgreSQL</label>
+                    <label class="chip" data-value="sqlserver">SQL Server</label>
+                </div>
+            </div>
+
+            <div class="text-field">
+                <label class="text-field__label">
+                    代码类型
+                    <span class="help-icon" data-help="选择要生成哪些层的代码。&#10;&#10;必选项（带 * 标记）：&#10;Entity — 实体类，映射数据库表结构&#10;Mapper — 数据访问层接口&#10;Service — 业务逻辑层接口与实现&#10;&#10;可选项：&#10;Controller — REST 接口层&#10;XML — MyBatis 映射文件（MP 模式下自动禁用）&#10;Vue — Element UI 组件 + CRUD 页面 + api.js&#10;React — Ant Design Pro 组件 + ProTable 页面 + api.ts&#10;Test — 单元测试类（Mapper/Service/Controller）&#10;&#10;切换 MyBatis-Plus 后 XML 自动取消选中并灰掉，Mapper 和 Entity 将使用 MP 特有注解。">?</span>
+                </label>
+                <div class="chip-group" id="codeTypes">
+                    <label class="chip chip--selected chip--required" data-value="entity">Entity *</label>
+                    <label class="chip chip--selected chip--required" data-value="mapper">Mapper *</label>
+                    <label class="chip chip--selected chip--required" data-value="service">Service *</label>
+                    <label class="chip chip--selected" data-value="controller">Controller</label>
+                    <label class="chip chip--selected" data-value="xml">XML</label>
+                    <label class="chip" data-value="vue">Vue</label>
+                    <label class="chip" data-value="react">React</label>
+                    <label class="chip" data-value="test">Test</label>
+                </div>
+            </div>
+
+            <div class="text-field">
+                <label class="text-field__label">
+                    架构模式
+                    <span class="help-icon" data-help="MyBatis-Plus 模式（🔥）：&#10;Entity → @TableName + @TableId(ASSIGN_ID)&#10;Mapper → extends BaseMapper&lt;Entity&gt;&#10;Service → extends IService&lt;Entity&gt; + ServiceImpl&#10;&#10;JPA 模式（🍃）：&#10;Entity → @Entity + @Table + @Column 注解&#10;Repository → extends JpaRepository&#10;Service → 接口 + 实现，注入 Repository&#10;自动禁用 XML（JPA 无需映射文件）&#10;&#10;DDD 架构（🏗 充血模型，四层分层）：&#10;domain/          聚合根 + Repository 接口&#10;infrastructure/  Repository 实现 + Mapper&#10;application/     AppService 用例编排&#10;interfaces/      REST Controller&#10;&#10;MP 和 JPA 互斥（不同 ORM），两者可分别与 DDD 组合。">?</span>
+                </label>
+                <div class="chip-group" id="archModes">
+                    <label class="chip chip--mp" data-value="mp" id="chipMp">🔥 MyBatis-Plus</label>
+                    <label class="chip chip--jpa" data-value="jpa" id="chipJpa">🍃 JPA</label>
+                    <label class="chip chip--ddd" data-value="ddd" id="chipDdd">🏗 DDD 架构</label>
+                </div>
+            </div>
+
+            <button class="btn btn--tertiary btn--full" id="btnGenerate" onclick="generateCode()" disabled style="margin-top:4px;">
+                📦 生成并下载 ZIP
+            </button>
+            </div><!-- end configBody -->
+        </div><!-- end configCard -->
+
+        <!-- 解析结果 -->
+        <div class="card">
+            <div class="card__header">
+                <span>📋 解析结果</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="card__badge" id="tableCount"></span>
+                    <button class="btn btn--outlined btn--sm" id="btnAudit" onclick="aiAuditTables()" disabled style="display:none;">🤖 AI 审计</button>
+                    <button class="btn btn--filled btn--sm" id="btnAiFix" onclick="aiFixSql()" disabled style="display:none;">🔧 AI 修复</button>
+                </div>
+            </div>
+            <div class="card__body card__body--flush open">
+            <div class="table-preview">
+                <div class="table-preview__body" id="tablePreview">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">📋</div>
+                        <div>解析 SQL 后在此展示表结构</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- 模板管理 -->
+        <div class="card">
+            <div class="card__header card__header--clickable" onclick="toggleTemplateManager()">
+                <span>📁 模板管理</span>
+                <span class="card__arrow" id="tmToggle">▶</span>
+            </div>
+            <div class="card__body card__body--flush" id="tmBody">
+                <div class="template-list" id="templateList">
+                    <div class="empty-state">加载中…</div>
+                </div>
+                <div class="template-editor" id="templateEditor" style="display:none;">
+                    <textarea id="templateContent" placeholder="模板内容…"></textarea>
+                    <div class="template-editor__actions">
+                        <button class="btn btn--filled btn--sm" onclick="saveTemplate()">💾 保存</button>
+                        <button class="btn btn--tonal btn--sm" onclick="validateTemplate()">✅ 校验语法</button>
+                        <button class="btn btn--outlined btn--sm" onclick="restoreTemplates()">↺ 还原默认</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Snackbar ===== -->
+<div class="snackbar-container" id="snackbarContainer"></div>
+<script>
+// ===== State =====
+let parsedTables = [];
+let parsedSql = '';
+let currentTemplate = null;
+let aiFile = null;
+
+// ===== Input Mode Switching =====
+function switchInputMode(mode) {
+    document.getElementById('mode-upload').style.display = mode === 'upload' ? 'block' : 'none';
+    document.getElementById('mode-paste').style.display = mode === 'paste' ? 'block' : 'none';
+    document.getElementById('mode-ai').style.display = mode === 'ai' ? 'block' : 'none';
+    document.getElementById('actions-normal').style.display = mode === 'ai' ? 'none' : '';
+    document.getElementById('actions-ai').style.display = mode === 'ai' ? '' : 'none';
+    if (mode === 'ai') updateActionBar();
+}
+
+// ===== Action Bar =====
+function updateActionBar() {
+    const hasFile = aiFile != null;
+    const hasText = document.getElementById('aiTextInput').value.trim().length > 0;
+    document.getElementById('btnAiAnalyze').disabled = !(hasFile || hasText);
+    document.getElementById('btnAiParse').disabled = !parsedSql;
+}
+
+// ===== Config card toggle =====
+function toggleConfigCard() {
+    const body = document.getElementById('configBody');
+    const header = document.getElementById('configCard').querySelector('.card__header');
+    const toggle = document.getElementById('configToggle');
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    toggle.textContent = isOpen ? '▼' : '▶';
+    header.classList.toggle('card__header--open', isOpen);
+}
+
+// ===== File Upload =====
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+});
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) handleFile(file);
+});
+
+function handleFile(file) {
+    if (!file.name.endsWith('.sql') && !file.name.endsWith('.txt')) {
+        showSnackbar('请上传 .sql 或 .txt 文件', 'error');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+        parsedSql = e.target.result;
+        document.getElementById('sqlEditor').value = parsedSql;
+        fileInfo.style.display = 'block';
+        fileInfo.innerHTML = `📎 已加载：<strong>${escapeHtml(file.name)}</strong>（${(file.size / 1024).toFixed(1)} KB）`;
+        showSnackbar('文件加载成功', 'success');
+        parseSql();
+    };
+    reader.readAsText(file);
+}
+
+// ===== AI Requirement Analysis =====
+const aiFileInput = document.getElementById('aiFileInput');
+const aiTextInput = document.getElementById('aiTextInput');
+const btnGenerate = document.getElementById('btnGenerate');
+
+document.getElementById('btnAiPickFile').addEventListener('click', () => aiFileInput.click());
+aiFileInput.addEventListener('change', () => {
+    const file = aiFileInput.files[0];
+    if (file) handleAiFile(file);
+});
+
+aiTextInput.addEventListener('input', updateActionBar);
+
+function handleAiFile(file) {
+    const ext = file.name.toLowerCase();
+    if (!ext.endsWith('.docx') && !ext.endsWith('.md') && !ext.endsWith('.txt')) {
+        showSnackbar('请上传 .docx / .md / .txt 格式的需求文档', 'error');
+        return;
+    }
+    aiFile = file;
+    document.getElementById('aiFileLabel').textContent = `${file.name}（${(file.size / 1024).toFixed(1)} KB）`;
+    document.getElementById('aiFileLabel').classList.add('ai-file-label--loaded');
+    updateActionBar();
+}
+
+async function aiAnalyze() {
+    const text = aiTextInput.value.trim();
+    if (!aiFile && !text) return showSnackbar('请上传需求文档或输入需求描述', 'error');
+
+    const btn = document.getElementById('btnAiAnalyze');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> AI 正在分析…';
+
+    const status = document.getElementById('aiStatus');
+    status.innerHTML = '';
+
+    const dbTypeEl = document.querySelector('#dbType .chip--selected');
+    const dbType = dbTypeEl ? dbTypeEl.dataset.value : 'mysql';
+
+    try {
+        let res;
+        if (aiFile) {
+            const formData = new FormData();
+            formData.append('file', aiFile);
+            formData.append('dbType', dbType);
+            res = await fetch('/api/gen/ai/analyze', { method: 'POST', body: formData });
+        } else {
+            res = await fetch('/api/gen/ai/analyze-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, dbType })
+            });
+        }
+        const data = await res.json();
+
+        if (data.success) {
+            const aiData = data.data;
+            parsedSql = aiData.sql;
+            parsedTables = aiData.tables;
+            document.getElementById('sqlEditor').value = parsedSql;
+            renderTablePreview(parsedTables);
+            document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
+            btnGenerate.disabled = false;
+            document.getElementById('btnAudit').style.display = '';
+            document.getElementById('btnAudit').disabled = false;
+            document.getElementById('btnAiFix').style.display = 'none';
+
+
+            status.innerHTML = renderAiResult(aiData);
+            updateActionBar();
+            showSnackbar(data.message || 'AI 分析完成', 'success');
+        } else {
+            status.innerHTML = `<div class="ai-status-card ai-status-card--error">❌ ${escapeHtml(data.message || 'AI 分析失败')}</div>`;
+            showSnackbar(data.message || 'AI 分析失败', 'error');
+        }
+    } catch (e) {
+        status.innerHTML = `<div class="ai-status-card ai-status-card--error">❌ 请求失败：${escapeHtml(e.message)}</div>`;
+        showSnackbar('AI 分析出错：' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        updateActionBar();
+    }
+}
+
+function renderAiResult(aiData) {
+    let html = '';
+
+    // Summary
+    html += `<div class="ai-status-card ai-status-card--success">✅ AI 已生成 ${parsedTables.length} 张表 — <a href="javascript:void(0)" onclick="switchModeAndShowSql()" class="ai-view-sql-link">在编辑器中查看/修改 SQL →</a></div>`;
+
+    // Assumptions
+    const assumptions = aiData.assumptions || [];
+    if (assumptions.length > 0) {
+        html += '<div class="ai-section"><div class="ai-section__title">💡 AI 设计假设</div><ul class="ai-list">';
+        assumptions.forEach(a => { html += `<li>${escapeHtml(a)}</li>`; });
+        html += '</ul></div>';
+    }
+
+    // Audit warnings
+    const warnings = aiData.warnings || [];
+    if (warnings.length > 0) {
+        html += '<div class="ai-section"><div class="ai-section__title">🔍 安全审查报告</div>';
+        warnings.forEach(w => {
+            const icon = w.level === 'error' ? '🔴' : w.level === 'warning' ? '🟡' : '🔵';
+            html += `<div class="ai-audit-item ai-audit-item--${w.level}">
+                <div class="ai-audit-item__header">${icon} <strong>[${escapeHtml(w.category)}]</strong> ${escapeHtml(w.message)}</div>
+                <div class="ai-audit-item__suggestion">💡 ${escapeHtml(w.suggestion)}</div>
+            </div>`;
+        });
+        html += '</div>';
+    } else {
+        html += '<div class="ai-status-card ai-status-card--info">🔍 安全审查通过，未发现明显问题</div>';
+    }
+
+    return html;
+}
+
+function switchModeAndShowSql() {
+    document.querySelectorAll('#inputModeGroup .chip').forEach(c => c.classList.remove('chip--selected'));
+    document.querySelector('#inputModeGroup .chip[data-mode="paste"]').classList.add('chip--selected');
+    switchInputMode('paste');
+}
+
+async function aiParseAndPreview() {
+    const sql = document.getElementById('sqlEditor').value.trim() || parsedSql;
+    if (!sql) return showSnackbar('没有可解析的 SQL', 'error');
+    parsedSql = sql;
+    try {
+        const res = await fetch('/api/gen/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql })
+        });
+        const data = await res.json();
+        if (data.success) {
+            parsedTables = data.data.tables || data.data;
+            renderTablePreview(parsedTables);
+            document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
+            btnGenerate.disabled = false;
+            document.getElementById('btnAudit').style.display = '';
+            document.getElementById('btnAudit').disabled = false;
+            document.getElementById('btnAiFix').style.display = 'none';
+
+            if (data.data.dbType) {
+                selectDbChip(data.data.dbType);
+            }
+            showSnackbar(data.message || '解析成功', 'success');
+        } else {
+            showSnackbar(data.message || '解析失败', 'error');
+        }
+    } catch (e) {
+        showSnackbar('解析出错：' + e.message, 'error');
+    }
+}
+
+// ===== Chip Group =====
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const parent = chip.parentElement;
+        if (parent.id === 'inputModeGroup') {
+            parent.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--selected'));
+            chip.classList.add('chip--selected');
+            switchInputMode(chip.dataset.mode);
+        } else if (parent.id === 'dbType') {
+            // 数据库类型：单选
+            autoDetectedDb = false; // manual override
+            parent.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--selected'));
+            chip.classList.add('chip--selected');
+        } else if (chip.dataset.value === 'mp') {
+            // MyBatis-Plus: mutually exclusive with JPA
+            document.getElementById('chipJpa').classList.remove('chip--selected');
+            chip.classList.toggle('chip--selected');
+            updateArchModeState();
+        } else if (chip.dataset.value === 'jpa') {
+            // JPA: mutually exclusive with MP
+            document.getElementById('chipMp').classList.remove('chip--selected');
+            chip.classList.toggle('chip--selected');
+            updateArchModeState();
+        } else if (chip.dataset.value === 'ddd') {
+            // DDD：切换架构
+            chip.classList.toggle('chip--selected');
+        } else if (chip.dataset.value === 'xml') {
+            const mpChip = document.getElementById('chipMp');
+            const jpaChip = document.getElementById('chipJpa');
+            const hadMpOrJpa = mpChip.classList.contains('chip--selected') || jpaChip.classList.contains('chip--selected');
+            mpChip.classList.remove('chip--selected');
+            jpaChip.classList.remove('chip--selected');
+            if (hadMpOrJpa) updateArchModeState();
+            chip.classList.toggle('chip--selected');
+        } else if (chip.classList.contains('chip--required')) {
+        } else {
+            chip.classList.toggle('chip--selected');
+        }
+    });
+});
+
+function updateArchModeState() {
+    const mpOn = document.getElementById('chipMp').classList.contains('chip--selected');
+    const jpaOn = document.getElementById('chipJpa').classList.contains('chip--selected');
+    const xmlChip = document.querySelector('#codeTypes .chip[data-value="xml"]');
+    const mpChip = document.getElementById('chipMp');
+    const jpaChip = document.getElementById('chipJpa');
+
+    // XML disabled for both MP and JPA
+    if (mpOn || jpaOn) {
+        xmlChip.classList.remove('chip--selected');
+        xmlChip.style.opacity = '0.4';
+        xmlChip.style.pointerEvents = 'none';
+    } else {
+        xmlChip.style.opacity = '';
+        xmlChip.style.pointerEvents = '';
+    }
+
+    // MP and JPA mutually exclusive visual
+    if (jpaOn) {
+        mpChip.style.opacity = '0.38';
+        mpChip.style.pointerEvents = 'none';
+    } else if (mpOn) {
+        jpaChip.style.opacity = '0.38';
+        jpaChip.style.pointerEvents = 'none';
+    } else {
+        mpChip.style.opacity = '';
+        mpChip.style.pointerEvents = '';
+        jpaChip.style.opacity = '';
+        jpaChip.style.pointerEvents = '';
+    }
+}
+
+// ===== Template Manager =====
+function toggleTemplateManager() {
+    const body = document.getElementById('tmBody');
+    const header = body.parentElement.querySelector('.card__header');
+    const toggle = document.getElementById('tmToggle');
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    toggle.textContent = isOpen ? '▼' : '▶';
+    header.classList.toggle('card__header--open', isOpen);
+    if (isOpen) loadTemplateList();
+}
+
+async function loadTemplateList() {
+    try {
+        const res = await fetch('/api/gen/templates');
+        const data = await res.json();
+        const list = document.getElementById('templateList');
+        if (data.success && data.data) {
+            list.innerHTML = data.data.map(path => {
+                const display = path.replace(/^vm\//, '');
+                return `<div class="template-list__item" onclick="selectTemplate('${escapeHtml(path)}', this)">${escapeHtml(display)}</div>`;
+            }).join('');
+        }
+    } catch (e) {
+        document.getElementById('templateList').innerHTML = '<div class="empty-state">加载失败</div>';
+    }
+}
+
+async function selectTemplate(name, el) {
+    currentTemplate = name;
+    document.querySelectorAll('.template-list__item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+
+    try {
+        const res = await fetch(`/api/gen/template?name=${encodeURIComponent(name)}`);
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('templateEditor').style.display = 'block';
+            document.getElementById('templateContent').value = data.data.content;
+        }
+    } catch (e) {
+        showSnackbar('加载模板失败', 'error');
+    }
+}
+
+async function saveTemplate() {
+    if (!currentTemplate) return showSnackbar('请先选择一个模板', 'error');
+    const content = document.getElementById('templateContent').value;
+    try {
+        const res = await fetch('/api/gen/template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ templateName: currentTemplate, content })
+        });
+        const data = await res.json();
+        showSnackbar(data.message || '已保存', data.success ? 'success' : 'error');
+    } catch (e) {
+        showSnackbar('保存失败', 'error');
+    }
+}
+
+async function validateTemplate() {
+    if (!currentTemplate) return showSnackbar('请先选择一个模板', 'error');
+    const content = document.getElementById('templateContent').value;
+    try {
+        const res = await fetch('/api/gen/template/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ templateName: currentTemplate, content })
+        });
+        const data = await res.json();
+        showSnackbar(data.message, data.success ? 'success' : 'error');
+    } catch (e) {
+        showSnackbar('校验失败', 'error');
+    }
+}
+
+function restoreTemplates() {
+    if (!confirm('将备份并删除所有自定义模板，确认还原为默认模板？\n备份文件将自动下载为 ZIP。')) return;
+    const a = document.createElement('a');
+    a.href = '/api/gen/templates/restore';
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showSnackbar('已还原为默认模板', 'success');
+}
+
+// ===== Parse SQL =====
+let autoDetectedDb = false; // track whether user manually changed DB type after auto-detect
+
+async function parseSql() {
+    const sql = document.getElementById('sqlEditor').value.trim() || parsedSql;
+    if (!sql) {
+        document.getElementById('sqlEditor').value && (parsedSql = document.getElementById('sqlEditor').value);
+        if (!parsedSql) return showSnackbar('请上传 SQL 文件或粘贴 SQL 语句', 'error');
+    }
+    parsedSql = sql;
+    document.getElementById('sqlEditor').value = sql;
+
+    try {
+        const res = await fetch('/api/gen/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql })
+        });
+        const data = await res.json();
+        if (data.success) {
+            parsedTables = data.data.tables || data.data;
+            renderTablePreview(parsedTables);
+            document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
+            document.getElementById('btnGenerate').disabled = false;
+            document.getElementById('btnAudit').style.display = '';
+            document.getElementById('btnAudit').disabled = false;
+            document.getElementById('btnAiFix').style.display = 'none';
+
+            if (data.data.dbType) {
+                selectDbChip(data.data.dbType);
+            }
+            showSnackbar(data.message || '解析成功', 'success');
+        } else {
+            showSnackbar(data.message || '解析失败', 'error');
+        }
+    } catch (e) {
+        showSnackbar('解析出错：' + e.message, 'error');
+    }
+}
+
+// ===== Render Table Preview =====
+let auditMap = {}; // tableName → { issues, association }
+
+function renderTablePreview(tables, auditData) {
+    const container = document.getElementById('tablePreview');
+    if (!tables || tables.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📋</div><div>未解析到表结构</div></div>';
+        return;
+    }
+
+    // Build audit lookup
+    const am = {};
+    if (auditData && auditData.tables) {
+        for (const t of auditData.tables) {
+            const name = (t.tableName || '').toLowerCase();
+            am[name] = { issues: t.issues || [], association: t.association || false };
+        }
+    }
+    auditMap = am;
+
+    const renderRow = (c) => `
+        <div class="column-row${c.audit ? ' column-row--audit' : ''}">
+            <span class="column-row__name">
+                ${escapeHtml(c.columnName)}
+                ${c.audit ? '<span class="column-badge column-badge--audit">审计</span>' : ''}
+            </span>
+            <span class="column-row__type" title="${escapeHtml(c.columnComment || '')}">${escapeHtml(c.dataType)}</span>
+            <span class="column-row__java">${escapeHtml(c.attrType)}</span>
+            <span class="column-row__example">${escapeHtml(c.example || '—')}</span>
+        </div>`;
+
+    const tablesHtml = tables.map(t => {
+        const cols = t.columns || [];
+        const auditCols = cols.filter(c => c.audit);
+        const bizCols = cols.filter(c => !c.audit);
+        const key = (t.tableName || '').toLowerCase();
+        const auditInfo = am[key];
+        const issues = auditInfo ? auditInfo.issues : [];
+        const isAssoc = auditInfo ? auditInfo.association : false;
+
+        // Build header badges
+        let headerBadges = '';
+        if (isAssoc) {
+            headerBadges += '<span class="table-audit-tag table-audit-tag--assoc">关联表</span>';
+        }
+        if (issues.length > 0) {
+            const errCount = issues.filter(i => i.level === 'error').length;
+            const warnCount = issues.filter(i => i.level === 'warning').length;
+            const infoCount = issues.filter(i => i.level === 'info').length;
+            if (errCount > 0) headerBadges += `<span class="table-audit-badge table-audit-badge--error">❌ ${errCount}</span>`;
+            if (warnCount > 0) headerBadges += `<span class="table-audit-badge table-audit-badge--warning">⚠️ ${warnCount}</span>`;
+            if (infoCount > 0) headerBadges += `<span class="table-audit-badge table-audit-badge--info">💡 ${infoCount}</span>`;
+
+            // Build popover content from audit issues (use &#10; to preserve newlines in data-help)
+            const popoverLines = issues.map(i => {
+                const ei = i.level === 'error' ? '❌' : i.level === 'warning' ? '⚠️' : '💡';
+                return `[${ei} ${escapeHtml(i.category)}] ${escapeHtml(i.message)}&#10;  → ${escapeHtml(i.suggestion)}`;
+            });
+            headerBadges += `<span class="help-icon table-audit-icon" data-help="${popoverLines.join('&#10;&#10;')}">!</span>`;
+        }
+
+        return `
+        <div class="table-item">
+            <div class="table-item__header" onclick="toggleTableColumns(this)">
+                <span>
+                    <span class="table-item__name">${escapeHtml(t.tableName)}</span>
+                    ${t.tableComment ? `<span class="table-item__comment">— ${escapeHtml(t.tableComment)}</span>` : ''}
+                    ${headerBadges}
+                </span>
+                <span class="table-item__arrow">▼</span>
+            </div>
+            <div class="table-columns">
+                <div class="column-header-row">
+                    <span class="column-header-row__name">字段</span>
+                    <span class="column-header-row__type">SQL 类型</span>
+                    <span class="column-header-row__java">Java</span>
+                    <span class="column-header-row__example">示例值</span>
+                </div>
+                ${bizCols.length > 0 ? `
+                    <div class="column-section-label">业务字段 <span class="column-section-count">${bizCols.length}</span></div>
+                    ${bizCols.map(renderRow).join('')}
+                ` : ''}
+                ${auditCols.length > 0 ? `
+                    <div class="column-section-label column-section-label--audit">操作溯源字段 <span class="column-section-count">${auditCols.length}</span></div>
+                    ${auditCols.map(renderRow).join('')}
+                ` : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    // Audit summary banner
+    let summaryHtml = '';
+    if (Object.keys(am).length > 0) {
+        const allIssues = Object.values(am).flatMap(v => v.issues);
+        const errTotal = allIssues.filter(i => i.level === 'error').length;
+        const warnTotal = allIssues.filter(i => i.level === 'warning').length;
+        const infoTotal = allIssues.filter(i => i.level === 'info').length;
+        if (errTotal + warnTotal + infoTotal > 0) {
+            summaryHtml = '<div class="table-audit-summary">';
+            summaryHtml += '<span class="table-audit-summary__title">🤖 AI 审计</span>';
+            if (errTotal > 0) summaryHtml += `<span class="audit-badge audit-badge--error">${errTotal} 错误</span>`;
+            if (warnTotal > 0) summaryHtml += `<span class="audit-badge audit-badge--warning">${warnTotal} 警告</span>`;
+            if (infoTotal > 0) summaryHtml += `<span class="audit-badge audit-badge--info">${infoTotal} 建议</span>`;
+            summaryHtml += '</div>';
+        } else {
+            summaryHtml = '<div class="table-audit-summary table-audit-summary--ok">✅ 所有表结构检查通过</div>';
+        }
+    }
+
+    container.innerHTML = summaryHtml + tablesHtml;
+}
+
+function toggleTableColumns(header) {
+    const columns = header.nextElementSibling;
+    const arrow = header.querySelector('.table-item__arrow');
+    columns.classList.toggle('open');
+    arrow.classList.toggle('open');
+}
+
+// ===== AI Audit =====
+let lastAuditResult = null;
+
+async function aiAuditTables() {
+    if (!parsedSql) return showSnackbar('没有可审计的 SQL', 'error');
+
+    const btn = document.getElementById('btnAudit');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 审计中…';
+
+    document.getElementById('btnAiFix').style.display = 'none';
+
+    try {
+        const dbTypeEl = document.querySelector('#dbType .chip--selected');
+        const dbType = dbTypeEl ? dbTypeEl.dataset.value : 'mysql';
+        const res = await fetch('/api/gen/ai/audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql: parsedSql, dbType })
+        });
+        const data = await res.json();
+        if (data.success) {
+            lastAuditResult = data.data;
+            // Re-render table preview with audit data integrated
+            renderTablePreview(parsedTables, data.data);
+            const issues = data.data.totalIssues || 0;
+            if (issues > 0) {
+                document.getElementById('btnAiFix').style.display = '';
+                document.getElementById('btnAiFix').disabled = false;
+                showSnackbar(`AI 审计完成：发现 ${issues} 个问题`, 'warning');
+            } else {
+                showSnackbar('AI 审计完成：未发现问题', 'success');
+            }
+        } else {
+            showSnackbar(data.message || '审计失败', 'error');
+        }
+    } catch (e) {
+        showSnackbar('AI 审计出错：' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
+async function aiFixSql() {
+    if (!parsedSql || !lastAuditResult) return showSnackbar('请先执行 AI 审计', 'error');
+
+    if (!confirm('AI 将根据审计结果修复以下问题：\n\n' +
+        (lastAuditResult.tables || []).flatMap(t => t.issues || [])
+            .map(i => `• [${i.category}] ${i.message}`).join('\n') +
+        '\n\n确认修复？此操作将覆盖当前 SQL。')) return;
+
+    const btn = document.getElementById('btnAiFix');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 修复中…';
+
+    const instructions = (lastAuditResult.tables || [])
+        .flatMap(t => t.issues || [])
+        .map(i => `${i.message} → ${i.suggestion}`)
+        .join('; ');
+
+    try {
+        const dbTypeEl = document.querySelector('#dbType .chip--selected');
+        const dbType = dbTypeEl ? dbTypeEl.dataset.value : 'mysql';
+        const res = await fetch('/api/gen/ai/fix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql: parsedSql, instructions, dbType })
+        });
+        const data = await res.json();
+        if (data.success) {
+            parsedSql = data.data.sql;
+            parsedTables = data.data.tables;
+            document.getElementById('sqlEditor').value = parsedSql;
+            renderTablePreview(parsedTables);
+            document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
+            document.getElementById('btnGenerate').disabled = false;
+            document.getElementById('btnAiFix').style.display = 'none';
+            lastAuditResult = null;
+            auditMap = {};
+            showSnackbar(data.message || 'SQL 修复完成', 'success');
+        } else {
+            showSnackbar(data.message || '修复失败', 'error');
+        }
+    } catch (e) {
+        showSnackbar('修复出错：' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
+// ===== Generate Code =====
+async function generateCode() {
+    if (!parsedSql) return showSnackbar('没有可供生成 SQL，请先解析', 'error');
+
+    const author = document.getElementById('author').value || 'sue';
+    const packageName = document.getElementById('packageName').value || 'com.example';
+
+    const codeTypes = [];
+    document.querySelectorAll('#codeTypes .chip--selected, #archModes .chip--selected').forEach(el => {
+        codeTypes.push(el.dataset.value);
+    });
+
+    const dbTypeEl = document.querySelector('#dbType .chip--selected');
+    const dbType = dbTypeEl ? dbTypeEl.dataset.value : 'mysql';
+
+    const btn = document.getElementById('btnGenerate');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 正在生成…';
+
+    try {
+        const res = await fetch('/api/gen/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ author, packageName, createSql: parsedSql, codeTypes, dbType })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || '生成失败');
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'code-generator.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showSnackbar('代码生成成功，ZIP 下载中', 'success');
+    } catch (e) {
+        showSnackbar('生成失败：' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
+// ===== Clear =====
+function clearAll() {
+    parsedSql = '';
+    parsedTables = [];
+    aiFile = null;
+    document.getElementById('sqlEditor').value = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('aiFileInput').value = '';
+    document.getElementById('aiFileLabel').textContent = '未选择文件';
+    document.getElementById('aiFileLabel').classList.remove('ai-file-label--loaded');
+    document.getElementById('aiTextInput').value = '';
+    document.getElementById('aiStatus').innerHTML = '';
+    document.getElementById('tablePreview').innerHTML = '<div class="empty-state"><div class="empty-state__icon">📋</div><div>解析 SQL 后在此展示表结构</div></div>';
+    document.getElementById('tableCount').textContent = '';
+    document.getElementById('btnGenerate').disabled = true;
+    document.getElementById('btnAudit').style.display = 'none';
+    document.getElementById('btnAudit').disabled = true;
+    document.getElementById('btnAiFix').style.display = 'none';
+    lastAuditResult = null;
+    auditMap = {};
+    updateActionBar();
+    showSnackbar('已清空', 'info');
+}
+
+// ===== Snackbar (MD3) =====
+function showSnackbar(message, type) {
+    const container = document.getElementById('snackbarContainer');
+    const bar = document.createElement('div');
+    bar.className = `snackbar snackbar--${type || 'info'}`;
+    bar.innerHTML = `<span>${escapeHtml(message)}</span><button class="snackbar__action" onclick="this.parentElement.remove()">关闭</button>`;
+    container.appendChild(bar);
+    setTimeout(() => {
+        bar.style.opacity = '0';
+        bar.style.transition = 'opacity 0.3s';
+        setTimeout(() => bar.remove(), 300);
+    }, 3600);
+}
+
+function selectDbChip(dbType) {
+    if (autoDetectedDb) return;
+    document.querySelectorAll('#dbType .chip').forEach(c => c.classList.remove('chip--selected', 'chip--detected'));
+    const target = document.querySelector(`#dbType .chip[data-value="${dbType}"]`);
+    if (target) {
+        target.classList.add('chip--selected', 'chip--detected');
+        autoDetectedDb = true;
+        setTimeout(() => target.classList.remove('chip--detected'), 1500);
+    }
+}
+
+// ===== Utils =====
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ===== Help popover =====
+let activePopover = null;
+
+function showHelpPopover(icon) {
+    if (activePopover) hideHelpPopover();
+    const text = icon.dataset.help;
+    if (!text) return;
+
+    const html = text
+        .split('\n\n')
+        .map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>')
+        .join('');
+
+    const popover = document.createElement('div');
+    popover.className = 'help-popover';
+    popover.innerHTML = html;
+    document.body.appendChild(popover);
+
+    const iconRect = icon.getBoundingClientRect();
+    const popoverW = 320;
+    let left = iconRect.left + iconRect.width / 2 - popoverW / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - popoverW - 8));
+    popover.style.left = left + 'px';
+    popover.style.top = (iconRect.bottom + 8) + 'px';
+
+    requestAnimationFrame(() => popover.classList.add('show'));
+    icon.classList.add('active');
+    activePopover = { popover, icon };
+}
+
+function hideHelpPopover() {
+    if (!activePopover) return;
+    activePopover.icon.classList.remove('active');
+    activePopover.popover.classList.remove('show');
+    setTimeout(() => {
+        if (activePopover && activePopover.popover.parentNode) {
+            activePopover.popover.remove();
+        }
+        activePopover = null;
+    }, 200);
+}
+
+document.addEventListener('click', e => {
+    const icon = e.target.closest('.help-icon');
+    if (icon) {
+        e.stopPropagation();
+        if (icon.classList.contains('active')) {
+            hideHelpPopover();
+        } else {
+            showHelpPopover(icon);
+        }
+    } else if (activePopover) {
+        hideHelpPopover();
+    }
+});
+
+// ===== Keyboard: Ctrl+Enter 解析 =====
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        parseSql();
+    }
+});
+</script>
+
+</body>
+</html>

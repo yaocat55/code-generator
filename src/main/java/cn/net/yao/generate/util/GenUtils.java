@@ -82,16 +82,49 @@ public class GenUtils {
 
     public static List<String> getTemplates() {
         List<String> templates = new ArrayList<>();
+        // Standard MyBatis
         templates.add("vm/java/Entity.java.vm");
         templates.add("vm/java/ConditionEntity.java.vm");
         templates.add("vm/java/Mapper.java.vm");
         templates.add("vm/java/Service.java.vm");
         templates.add("vm/java/Controller.java.vm");
         templates.add("vm/xml/Mapper.xml.vm");
+        templates.add("vm/xml/Mapper-pg.xml.vm");
+        templates.add("vm/xml/Mapper-mssql.xml.vm");
+        // MyBatis-Plus
+        templates.add("vm/java/mp/Entity.java.vm");
+        templates.add("vm/java/mp/Mapper.java.vm");
+        templates.add("vm/java/mp/Service.java.vm");
+        templates.add("vm/java/mp/ServiceImpl.java.vm");
+        templates.add("vm/java/mp/Controller.java.vm");
+        // JPA
+        templates.add("vm/java/jpa/Entity.java.vm");
+        templates.add("vm/java/jpa/Repository.java.vm");
+        templates.add("vm/java/jpa/Service.java.vm");
+        templates.add("vm/java/jpa/ServiceImpl.java.vm");
+        templates.add("vm/java/jpa/Controller.java.vm");
+        // DDD + Standard MyBatis
+        templates.add("vm/java/ddd/domain/Entity.java.vm");
+        templates.add("vm/java/ddd/domain/Repository.java.vm");
+        templates.add("vm/java/ddd/domain/Condition.java.vm");
+        templates.add("vm/java/ddd/infrastructure/RepositoryImpl.java.vm");
+        templates.add("vm/java/ddd/infrastructure/Mapper.java.vm");
+        templates.add("vm/java/ddd/application/Service.java.vm");
+        templates.add("vm/java/ddd/interfaces/Controller.java.vm");
+        // DDD + MyBatis-Plus
+        templates.add("vm/java/ddd/mp/domain/Entity.java.vm");
+        templates.add("vm/java/ddd/mp/domain/Repository.java.vm");
+        templates.add("vm/java/ddd/mp/domain/Condition.java.vm");
+        templates.add("vm/java/ddd/mp/infrastructure/RepositoryImpl.java.vm");
+        templates.add("vm/java/ddd/mp/infrastructure/Mapper.java.vm");
+        templates.add("vm/java/ddd/mp/application/Service.java.vm");
+        templates.add("vm/java/ddd/mp/interfaces/Controller.java.vm");
+        // Frontend
         templates.add("vm/vue/api.js.vm");
         templates.add("vm/vue/index.vue.vm");
         templates.add("vm/react/api.ts.vm");
         templates.add("vm/react/index.tsx.vm");
+        // Tests
         templates.add("vm/java/MapperTest.java.vm");
         templates.add("vm/java/ServiceTest.java.vm");
         templates.add("vm/java/ControllerTest.java.vm");
@@ -123,11 +156,16 @@ public class GenUtils {
     }
 
     public static String getFileName(String packageName, String template, TableInfo table, String moduleName) {
-        return getFileName(packageName, template, table, moduleName, null);
+        return getFileName(packageName, template, table, moduleName, null, null);
     }
 
     public static String getFileName(String packageName, String template, TableInfo table, String moduleName,
                                      String templateContent) {
+        return getFileName(packageName, template, table, moduleName, templateContent, null);
+    }
+
+    public static String getFileName(String packageName, String template, TableInfo table, String moduleName,
+                                     String templateContent, String archMode) {
         String classname = table.getClassname();
         String className = table.getClassName();
         String javaPath = getProjectPath(packageName);
@@ -140,27 +178,82 @@ public class GenUtils {
             packagePath = extractPackagePath(templateContent);
         }
 
+        // DDD mappings (check before generic ones)
+        if (template.contains("ddd/domain/Entity.java.vm") || template.contains("ddd/mp/domain/Entity.java.vm")) {
+            return javaPath + "domain/" + moduleName + "/" + className + ".java";
+        }
+        if (template.contains("ddd/domain/Repository.java.vm") || template.contains("ddd/mp/domain/Repository.java.vm")) {
+            return javaPath + "domain/" + moduleName + "/" + className + "Repository.java";
+        }
+        if (template.contains("ddd/domain/Condition.java.vm") || template.contains("ddd/mp/domain/Condition.java.vm")) {
+            return javaPath + "domain/" + moduleName + "/" + className + "Condition.java";
+        }
+        if (template.contains("ddd/infrastructure/Mapper.java.vm") || template.contains("ddd/mp/infrastructure/Mapper.java.vm")) {
+            return javaPath + "infrastructure/persistence/" + moduleName + "/" + className + "Mapper.java";
+        }
+        if (template.contains("ddd/infrastructure/RepositoryImpl.java.vm") || template.contains("ddd/mp/infrastructure/RepositoryImpl.java.vm")) {
+            return javaPath + "infrastructure/persistence/" + moduleName + "/" + className + "RepositoryImpl.java";
+        }
+        if (template.contains("ddd/application/Service.java.vm") || template.contains("ddd/mp/application/Service.java.vm")) {
+            return javaPath + "application/" + moduleName + "/" + className + "AppService.java";
+        }
+        if (template.contains("ddd/interfaces/Controller.java.vm") || template.contains("ddd/mp/interfaces/Controller.java.vm")) {
+            return javaPath + "interfaces/rest/" + className + "Controller.java";
+        }
+
+        // JPA mappings
+        if (template.contains("jpa/Entity.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "entity") + "/" + className + "Entity.java";
+        }
+        if (template.contains("jpa/Repository.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "repository") + "/" + className + "Repository.java";
+        }
+        if (template.contains("jpa/Service.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "service") + "/" + className + "Service.java";
+        }
+        if (template.contains("jpa/ServiceImpl.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "service") + "/impl/" + className + "ServiceImpl.java";
+        }
+        if (template.contains("jpa/Controller.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "controller") + "/" + className + "Controller.java";
+        }
+
         if (template.contains("ConditionEntity.java.vm")) {
             return javaPath + (packagePath != null ? packagePath : "entity") + "/" + className
                     + (classNameSuffix != null ? classNameSuffix : "ConditionEntity") + ".java";
+        }
+        if (template.contains("mp/Entity.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "entity") + "/" + className + "Entity.java";
         }
         if (template.contains("Entity.java.vm")) {
             return javaPath + (packagePath != null ? packagePath : "entity") + "/" + className
                     + (classNameSuffix != null ? classNameSuffix : "Entity") + ".java";
         }
+        if (template.contains("mp/Mapper.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "mapper") + "/" + className + "Mapper.java";
+        }
         if (template.contains("Mapper.java.vm")) {
             return javaPath + (packagePath != null ? packagePath : "mapper") + "/" + className
                     + (classNameSuffix != null ? classNameSuffix : "Mapper") + ".java";
+        }
+        if (template.contains("mp/Service.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "service") + "/" + className + "Service.java";
+        }
+        if (template.contains("mp/ServiceImpl.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "service") + "/impl/" + className + "ServiceImpl.java";
         }
         if (template.contains("Service.java.vm")) {
             return javaPath + (packagePath != null ? packagePath : "service") + "/" + className
                     + (classNameSuffix != null ? classNameSuffix : "Service") + ".java";
         }
+        if (template.contains("mp/Controller.java.vm")) {
+            return javaPath + (packagePath != null ? packagePath : "controller") + "/" + className + "Controller.java";
+        }
         if (template.contains("Controller.java.vm")) {
             return javaPath + (packagePath != null ? packagePath : "controller") + "/" + className
                     + (classNameSuffix != null ? classNameSuffix : "Controller") + ".java";
         }
-        if (template.contains("Mapper.xml.vm")) {
+        if (template.contains("Mapper") && template.endsWith(".xml.vm")) {
             return mybatisPath + "Mapper.xml";
         }
         if (template.contains("api.js.vm")) {
@@ -176,12 +269,23 @@ public class GenUtils {
             return REACT_PATH + "/" + classname + "/index.tsx";
         }
         if (template.contains("MapperTest.java.vm")) {
+            if ("ddd".equals(archMode) || "ddd-mp".equals(archMode)) {
+                return "test/java/" + packageName.replace(".", "/") + "/infrastructure/persistence/" + moduleName + "/" + className + "MapperTest.java";
+            } else if ("jpa".equals(archMode)) {
+                return "test/java/" + packageName.replace(".", "/") + "/repository/" + className + "RepositoryTest.java";
+            }
             return "test/java/" + packageName.replace(".", "/") + "/mapper/" + className + "MapperTest.java";
         }
         if (template.contains("ServiceTest.java.vm")) {
+            if ("ddd".equals(archMode) || "ddd-mp".equals(archMode)) {
+                return "test/java/" + packageName.replace(".", "/") + "/application/" + moduleName + "/" + className + "AppServiceTest.java";
+            }
             return "test/java/" + packageName.replace(".", "/") + "/service/" + className + "ServiceTest.java";
         }
         if (template.contains("ControllerTest.java.vm")) {
+            if ("ddd".equals(archMode) || "ddd-mp".equals(archMode)) {
+                return "test/java/" + packageName.replace(".", "/") + "/interfaces/rest/" + className + "ControllerTest.java";
+            }
             return "test/java/" + packageName.replace(".", "/") + "/web/controller/" + className + "ControllerTest.java";
         }
         if (template.contains("pom-dependencies.xml.vm")) {

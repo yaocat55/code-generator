@@ -22,8 +22,7 @@ import java.math.BigDecimal;
 #break
 #end
 #end
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * ${tableComment}实体
@@ -31,19 +30,19 @@ import io.swagger.annotations.ApiModelProperty;
  * @author ${author}
  * @date ${datetime}
  */
-@ApiModel("${tableComment}实体")
+@Schema(description = "${tableComment}实体")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class ${className}Entity extends BaseEntity {
 
 #foreach ($column in $columns)
-#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'isDel')
+#if($column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'isDel')
 
 	/**
 	 * $column.columnComment
 	 */
-	@ApiModelProperty("$column.columnComment")
+	@Schema(description = "$column.columnComment")
 	private $column.attrType $column.attrname;
 #end
 #end
@@ -52,7 +51,7 @@ public class ${className}Entity extends BaseEntity {
     /**
      * ${slaveTable.tableComment}列表
      */
-    @ApiModelProperty("${slaveTable.tableComment}列表")
+    @Schema(description = "${slaveTable.tableComment}列表")
     private List<${slaveTable.className}Entity> ${slaveTable.classname}List;
 #end
 }

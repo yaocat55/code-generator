@@ -1,0 +1,70 @@
+package ${basePackage}.web.controller;
+
+import ${package}.entity.${className}Entity;
+import ${package}.service.${className}Service;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * ${tableComment} 接口层 (JPA)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Tag(name = "${tableComment}操作", description = "${tableComment}接口")
+@RestController
+@RequestMapping("/v1/${classname}")
+public class ${className}Controller {
+
+    @Autowired
+    private ${className}Service ${classname}Service;
+
+    @Operation(summary = "通过id查询${tableComment}信息")
+    @GetMapping("/{id}")
+    public ${className}Entity findById(@PathVariable Long id) {
+        return ${classname}Service.findById(id).orElse(null);
+    }
+
+    @Operation(summary = "分页查询${tableComment}列表")
+    @GetMapping("/page")
+    public Page<${className}Entity> findByPage(@RequestParam(defaultValue = "1") int pageNum,
+                                                @RequestParam(defaultValue = "10") int pageSize) {
+        return ${classname}Service.findByPage(PageRequest.of(pageNum - 1, pageSize));
+    }
+
+    @Operation(summary = "查询${tableComment}列表")
+    @GetMapping("/list")
+    public List<${className}Entity> findList() {
+        return ${classname}Service.findList();
+    }
+
+    @Operation(summary = "添加${tableComment}")
+    @PostMapping
+    public ${className}Entity create(@RequestBody ${className}Entity entity) {
+        return ${classname}Service.create(entity);
+    }
+
+    @Operation(summary = "修改${tableComment}")
+    @PutMapping
+    public ${className}Entity modify(@RequestBody ${className}Entity entity) {
+        return ${classname}Service.modify(entity);
+    }
+
+    @Operation(summary = "删除${tableComment}")
+    @DeleteMapping("/{id}")
+    public void remove(@PathVariable Long id) {
+        ${classname}Service.remove(id);
+    }
+
+    @Operation(summary = "批量删除${tableComment}")
+    @DeleteMapping("/batch")
+    public void removeBatch(@RequestBody List<Long> ids) {
+        ${classname}Service.removeBatch(ids);
+    }
+}

@@ -1,0 +1,47 @@
+package ${package}.domain.${moduleName};
+
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+/**
+ * ${tableComment} 聚合根 (DDD + MyBatis-Plus)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Data
+@TableName("${tableName}")
+public class ${className} {
+
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+    private $column.attrType $column.attrname;
+#end
+#end
+    @TableField(fill = FieldFill.INSERT)
+    private Long createUserId;
+    @TableField(fill = FieldFill.INSERT)
+    private String createUserName;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Long updateUserId;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String updateUserName;
+    @Version
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+    @TableLogic
+    private Integer isDel;
+
+    public void markDeleted() {
+        this.isDel = 1;
+    }
+
+    public void restore() {
+        this.isDel = 0;
+    }
+}

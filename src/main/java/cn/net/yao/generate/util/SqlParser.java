@@ -201,9 +201,8 @@ public class SqlParser {
         String comment = extractColumnComment(fieldDef);
         column.setColumnComment(comment);
 
-        if (fieldLower.contains("auto_increment") || fieldLower.contains("primary key")) {
-            column.setExtra("auto_increment");
-        }
+        // 雪花ID策略，不使用数据库自增
+        column.setExtra("");
 
         String attrType = GenUtils.javaTypeMap.get(column.getDataType());
         if (attrType == null) attrType = "String";
@@ -235,10 +234,8 @@ public class SqlParser {
     }
 
     private static ColumnInfo findPrimaryKey(String sql, String sqlLower, List<ColumnInfo> columns) {
-        for (ColumnInfo column : columns) {
-            if ("auto_increment".equals(column.getExtra())) return column;
-        }
-        Pattern pattern = Pattern.compile("primary\\s+key\\s*\\([`]?([a-zA-Z_][a-zA-Z0-9_]*)[`]?\\)",
+        // 从 PRIMARY KEY 约束中查找
+        Pattern pattern = Pattern.compile("primary\\s+key\\s*\\([`\"\\[]?([a-zA-Z_][a-zA-Z0-9_]*)[`\"\\]]?\\)",
                 Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(sql);
         if (matcher.find()) {
@@ -247,7 +244,32 @@ public class SqlParser {
                 if (pkColumnName.equalsIgnoreCase(column.getColumnName())) return column;
             }
         }
+        // 没找到则默认第一列为主键
         return !columns.isEmpty() ? columns.get(0) : null;
+    }
+
+    /**
+     * Detect the database dialect from SQL syntax characteristics.
+     */
+    public static String detectDbType(String sql) {
+        if (sql == null || sql.isBlank()) return "mysql";
+        String upper = sql.toUpperCase();
+
+        // SQL Server: bracket quoting + SQL Server-specific types/functions
+        boolean hasBracketQuoting = sql.contains("[") && sql.contains("]");
+        boolean hasSqlServerMarkers = upper.contains("NVARCHAR") || upper.contains("DATETIME2")
+                || upper.contains("GETDATE()") || upper.contains("IDENTITY(");
+        if (hasBracketQuoting && hasSqlServerMarkers) return "sqlserver";
+        if (hasSqlServerMarkers && !sql.contains("`") && !upper.contains("ENGINE=")) return "sqlserver";
+
+        // PostgreSQL: PG-specific types without MySQL indicators
+        boolean hasPgMarkers = upper.contains("SERIAL") || upper.contains("::")
+                || upper.contains("BOOLEAN") || upper.contains("TIMESTAMP WITH TIME ZONE");
+        boolean hasMySqlMarkers = sql.contains("`") || upper.contains("ENGINE=")
+                || upper.contains("AUTO_INCREMENT") || upper.contains("TINYINT");
+        if (hasPgMarkers && !hasMySqlMarkers) return "postgresql";
+
+        return "mysql";
     }
 
     private static int findMatchingBracket(String sql, int startIndex) {

@@ -1,0 +1,25 @@
+package ${package}.domain.${moduleName};
+
+import lombok.Data;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * ${tableComment} 查询条件 (DDD)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Data
+public class ${className}Condition {
+
+    private Integer pageNo;
+    private Integer pageSize;
+
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+    private $column.attrType $column.attrname;
+
+#end
+#end
+}

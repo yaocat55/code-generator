@@ -1,0 +1,31 @@
+package ${package}.infrastructure.persistence.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import ${package}.domain.${moduleName}.${className}Condition;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import java.util.List;
+
+/**
+ * ${tableComment} MyBatis Mapper (DDD 基础设施层)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Mapper
+public interface ${className}Mapper {
+
+    ${className} findById(Long id);
+
+    int insert(${className} ${classname});
+
+    int update(${className} ${classname});
+
+    int deleteById(Long id);
+
+    List<${className}> findByIds(@Param("ids") List<Long> ids);
+
+    List<${className}> searchByCondition(${className}Condition condition);
+
+    int searchCount(${className}Condition condition);
+}

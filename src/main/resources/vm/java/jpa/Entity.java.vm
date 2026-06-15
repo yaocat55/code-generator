@@ -1,0 +1,67 @@
+package ${package}.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+/**
+ * ${tableComment}实体 (JPA)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Schema(description = "${tableComment}实体")
+@Entity
+@Table(name = "${tableName}")
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+public class ${className}Entity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "主键ID")
+    private Long id;
+
+#foreach ($column in $columns)
+#if($column.attrname != 'id' && $column.attrname != 'createUserId' && $column.attrname != 'createUserName' && $column.attrname != 'createTime' && $column.attrname != 'updateUserId' && $column.attrname != 'updateUserName' && $column.attrname != 'updateTime' && $column.attrname != 'isDel')
+    @Schema(description = "$column.columnComment")
+    @Column(name = "$column.columnName")
+    private $column.attrType $column.attrname;
+#end
+#end
+
+    @Schema(description = "创建人ID")
+    @Column(name = "create_user_id")
+    private Long createUserId;
+
+    @Schema(description = "创建人名称")
+    @Column(name = "create_user_name")
+    private String createUserName;
+
+    @Schema(description = "创建时间")
+    @Column(name = "create_time")
+    private LocalDateTime createTime;
+
+    @Schema(description = "更新人ID")
+    @Column(name = "update_user_id")
+    private Long updateUserId;
+
+    @Schema(description = "更新人名称")
+    @Column(name = "update_user_name")
+    private String updateUserName;
+
+    @Schema(description = "更新时间（乐观锁）")
+    @Version
+    @Column(name = "update_time")
+    private LocalDateTime updateTime;
+
+    @Schema(description = "软删除标记(0:正常 1:已删除)")
+    @Column(name = "is_del")
+    private Integer isDel;
+}

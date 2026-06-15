@@ -9,6 +9,8 @@ public class ColumnInfo {
     private String attrName;
     private String attrname;
     private String extra;
+    private String example;
+    private boolean isAudit;
 
     public String getColumnName() { return columnName; }
     public void setColumnName(String columnName) { this.columnName = columnName; }
@@ -33,4 +35,10 @@ public class ColumnInfo {
 
     public ColumnConfigInfo getConfigInfo() { return configInfo; }
     public void setConfigInfo(ColumnConfigInfo configInfo) { this.configInfo = configInfo; }
+
+    public String getExample() { return example; }
+    public void setExample(String example) { this.example = example; }
+
+    public boolean isAudit() { return isAudit; }
+    public void setAudit(boolean isAudit) { this.isAudit = isAudit; }
 }

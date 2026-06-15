@@ -1,0 +1,57 @@
+package ${package}.infrastructure.persistence.${moduleName};
+
+import ${package}.domain.${moduleName}.${className};
+import ${package}.domain.${moduleName}.${className}Repository;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.stereotype.Repository;
+import jakarta.annotation.Resource;
+import java.util.List;
+
+/**
+ * ${tableComment} 仓储实现 (DDD + MyBatis-Plus)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Repository
+public class ${className}RepositoryImpl implements ${className}Repository {
+
+    @Resource
+    private ${className}Mapper ${classname}Mapper;
+
+    @Override
+    public ${className} findById(Long id) {
+        return ${classname}Mapper.selectById(id);
+    }
+
+    @Override
+    public boolean save(${className} ${classname}) {
+        return ${classname}Mapper.insert(${classname}) > 0;
+    }
+
+    @Override
+    public boolean update(${className} ${classname}) {
+        return ${classname}Mapper.updateById(${classname}) > 0;
+    }
+
+    @Override
+    public boolean deleteById(Long id) {
+        return ${classname}Mapper.deleteById(id) > 0;
+    }
+
+    @Override
+    public List<${className}> findList() {
+        LambdaQueryWrapper<${className}> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(${className}::getCreateTime);
+        return ${classname}Mapper.selectList(wrapper);
+    }
+
+    @Override
+    public IPage<${className}> findPage(Page<${className}> page) {
+        LambdaQueryWrapper<${className}> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(${className}::getCreateTime);
+        return ${classname}Mapper.selectPage(page, wrapper);
+    }
+}

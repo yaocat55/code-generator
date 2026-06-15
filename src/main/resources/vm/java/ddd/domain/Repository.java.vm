@@ -1,0 +1,26 @@
+package ${package}.domain.${moduleName};
+
+import java.util.List;
+
+/**
+ * ${tableComment} 仓储接口 (DDD)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+public interface ${className}Repository {
+
+    ${className} findById(Long id);
+
+    int save(${className} ${classname});
+
+    int update(${className} ${classname});
+
+    int deleteById(Long id);
+
+    List<${className}> findByIds(List<Long> ids);
+
+    List<${className}> findByCondition(${className}Condition condition);
+
+    int countByCondition(${className}Condition condition);
+}

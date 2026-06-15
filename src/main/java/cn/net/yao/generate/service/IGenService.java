@@ -10,6 +10,8 @@ public interface IGenService {
 
     byte[] generatorCodeFromSql(String author, String packageName, String createSql, String[] codeTypes);
 
+    byte[] generatorCodeFromSql(String author, String packageName, String createSql, String[] codeTypes, String dbType);
+
     List<TableInfo> parseSqlToTables(String createSql);
 
     List<String> getTemplateList();

@@ -1,0 +1,30 @@
+package ${package}.service;
+
+import ${package}.entity.${className}Entity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * ${tableComment} 服务接口 (JPA)
+ *
+ * @author ${author}
+ * @date ${datetime}
+ */
+public interface ${className}Service {
+
+    Optional<${className}Entity> findById(Long id);
+
+    Page<${className}Entity> findByPage(Pageable pageable);
+
+    List<${className}Entity> findList();
+
+    ${className}Entity create(${className}Entity entity);
+
+    ${className}Entity modify(${className}Entity entity);
+
+    void remove(Long id);
+
+    void removeBatch(List<Long> ids);
+}

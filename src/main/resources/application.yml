@@ -4,10 +4,25 @@ server:
 spring:
   application:
     name: code-generator
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
+  ai:
+    openai:
+      api-key: sk-1685a2667baf4cb0ba95c53763f25d14
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-v4-flash
+          temperature: 0.3
 
 logging:
   level:
