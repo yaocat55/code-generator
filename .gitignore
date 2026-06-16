@@ -28,3 +28,7 @@ Thumbs.db
 # Claude
 .claude/
 Claude/
+
+# Application secrets (use application-template.yml instead)
+application.yml
+!application-template.yml
