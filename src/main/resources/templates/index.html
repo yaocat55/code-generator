@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <th:block th:replace="fragments/head :: head('Code Generator — Admin 后台管理代码生成器')"></th:block>
+    <th:block th:replace="~{fragments/head :: head('Code Generator — Admin 后台管理代码生成器')}"></th:block>
 </head>
 <body>
-    <th:block th:replace="fragments/header :: header"></th:block>
+    <th:block th:replace="~{fragments/header :: header}"></th:block>
 <!-- ===== Main ===== -->
 <div class="main-container">
     <!-- ========== 左侧：SQL 输入 ========== -->
@@ -322,14 +322,13 @@ async function aiAnalyze() {
             const aiData = data.data;
             parsedSql = aiData.sql;
             parsedTables = aiData.tables;
-            document.getElementById('sqlEditor').value = parsedSql;
             renderTablePreview(parsedTables);
             document.getElementById('tableCount').textContent = `${parsedTables.length} 张表`;
             btnGenerate.disabled = false;
             document.getElementById('btnAudit').style.display = '';
             document.getElementById('btnAudit').disabled = false;
             document.getElementById('btnAiFix').style.display = 'none';
-
+            // ER 图已移除
 
             status.innerHTML = renderAiResult(aiData);
             updateActionBar();
@@ -406,6 +405,7 @@ async function aiParseAndPreview() {
             document.getElementById('btnAudit').style.display = '';
             document.getElementById('btnAudit').disabled = false;
             document.getElementById('btnAiFix').style.display = 'none';
+            // ER 图已移除
 
             if (data.data.dbType) {
                 selectDbChip(data.data.dbType);
@@ -607,6 +607,7 @@ async function parseSql() {
             document.getElementById('btnAudit').style.display = '';
             document.getElementById('btnAudit').disabled = false;
             document.getElementById('btnAiFix').style.display = 'none';
+            // ER 图已移除
 
             if (data.data.dbType) {
                 selectDbChip(data.data.dbType);
@@ -619,6 +620,7 @@ async function parseSql() {
         showSnackbar('解析出错：' + e.message, 'error');
     }
 }
+
 
 // ===== Render Table Preview =====
 let auditMap = {}; // tableName → { issues, association }
@@ -889,6 +891,7 @@ function clearAll() {
     parsedSql = '';
     parsedTables = [];
     aiFile = null;
+    erRelationshipData = null;
     document.getElementById('sqlEditor').value = '';
     document.getElementById('fileInput').value = '';
     document.getElementById('fileInfo').style.display = 'none';
@@ -903,6 +906,7 @@ function clearAll() {
     document.getElementById('btnAudit').style.display = 'none';
     document.getElementById('btnAudit').disabled = true;
     document.getElementById('btnAiFix').style.display = 'none';
+    clearErCache();
     lastAuditResult = null;
     auditMap = {};
     updateActionBar();
